@@ -9,47 +9,43 @@ player_t player;
 error player_init(void)
 {
     gfx_error err;
-    player.sprite_index = 0;
 
-    player.sprite_body.tile  = 2;
-    player.sprite_body.x     = SCREEN_WIDTH / 2;
-    player.sprite_body.y     = SCREEN_HEIGHT / 2;
-    player.sprite_body.flags = SPRITE_NONE;
-    err                      = gfx_sprite_render(&vctx, player.sprite_index, &player.sprite_body);
-    if (err != GFX_SUCCESS)
-        return err;
+    gfx_sprite sprite = {
+        .tile = 2,
+        .flags = SPRITE_NONE,
+    };
 
-    player.sprite_head.tile  = 1;
-    player.sprite_head.x     = player.sprite_body.x;
-    player.sprite_head.y     = player.sprite_body.y - SPRITE_HEIGHT;
-    player.sprite_head.flags = SPRITE_NONE;
-    err                      = gfx_sprite_render(&vctx, player.sprite_index + 1, &player.sprite_head);
-    return err;
+    player.point.x     = SCREEN_WIDTH / 2;
+    player.point.y     = SCREEN_HEIGHT / 2;
+
+    player.sprite_body = sprites_register(sprite);
+
+    sprite.tile = 1;
+    player.sprite_body = sprites_register(sprite);
+
+    return ERR_SUCCESS;
 }
 
 error player_deinit(void)
 {
-    gfx_error err;
-    err = gfx_sprite_set_tile(&vctx, player.sprite_index, EMPTY_TILE);
-    err = gfx_sprite_set_tile(&vctx, player.sprite_index + 1, EMPTY_TILE);
-    return err;
+    return ERR_SUCCESS;
 }
 
 void player_move(void)
 {
-    uint16_t x  = player.sprite_body.x;
-    uint16_t y  = player.sprite_body.y;
+    uint16_t x  = player.point.x;
+    uint16_t y  = player.point.y;
     x          += (player.direction.x * PLAYER_SPEED);
     y          += (player.direction.y * PLAYER_SPEED);
 
     switch (player.direction.x) {
         case DIRECTION_LEFT: {
-            player.sprite_head.flags = SPRITE_FLIP_X;
-            player.sprite_body.flags = SPRITE_FLIP_X;
+            player.sprite_head->flags = SPRITE_FLIP_X;
+            player.sprite_body->flags = SPRITE_FLIP_X;
         } break;
         case DIRECTION_RIGHT: {
-            player.sprite_head.flags = SPRITE_NONE;
-            player.sprite_body.flags = SPRITE_NONE;
+            player.sprite_head->flags = SPRITE_NONE;
+            player.sprite_body->flags = SPRITE_NONE;
         } break;
     }
 
@@ -58,15 +54,14 @@ void player_move(void)
     if(y < SPRITE_HEIGHT) y = SPRITE_HEIGHT;
     else if(y > SCREEN_HEIGHT + SPRITE_HEIGHT) y = SCREEN_HEIGHT + SPRITE_HEIGHT;
 
-    player.sprite_body.x = x;
-    player.sprite_body.y = y;
-    player.sprite_head.x = x;
-    player.sprite_head.y = y - SPRITE_HEIGHT;
+    player_set_xy(x, y);
 }
 
-void player_draw(void)
-{
-    // ignore errors
-    gfx_sprite_render(&vctx, player.sprite_index, &player.sprite_head);
-    gfx_sprite_render(&vctx, player.sprite_index + 1, &player.sprite_body);
+void player_set_xy(uint16_t x, uint16_t y) {
+    player.point.x = x;
+    player.point.y = y;
+    player.sprite_body->x = x;
+    player.sprite_head->x = x;
+    player.sprite_body->y = y;
+    player.sprite_head->y = y - SPRITE_HEIGHT;
 }

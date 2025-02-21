@@ -96,7 +96,7 @@ GFX_BITS=4
 all:: clean-assets $(OUTPUT_DIR)
 	@echo "Creating asset bundle..."
 	mkdir -p assets/archive
-	# ./map2screen.py -i assets/world.tmx -m assets/archive/scrn.ztm -l 1 -s 20x15
+	./map2screen.py -i assets/enigma.tmx -m assets/archive/room.ztm -l 1 -s 40x21
 
 include $(ZGDK_PATH)/base_sdcc.mk
 
@@ -104,9 +104,9 @@ include $(ZGDK_PATH)/base_sdcc.mk
 
 all::
 	mkdir -p assets/archive
-	cp assets/tileset.ztp assets/tileset.zts assets/archive
-	$(ZAR_PATH)/zar.py -i assets/archive -o bin/world.zar
-	ls -l bin/world.zar
+	mv assets/tileset.ztp assets/tileset.zts assets/archive
+	$(ZAR_PATH)/zar.py -i assets/archive -o bin/enigma.zar
+	ls -l bin/enigma.zar
 
 clean-assets:
 	rm -rf assets/archive
