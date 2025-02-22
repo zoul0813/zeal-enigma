@@ -7,7 +7,7 @@
 
 #define WORLD_WIDTH  16
 #define WORLD_HEIGHT 8
-#define SCREEN_TILES (20 * 15)
+#define TILEMAP_OFFSET 0
 
 extern Vector2_u8 world_position;
 
@@ -19,8 +19,7 @@ typedef enum {
     TILE_UNKNOWN  = 255,  // unknown, assume an obstruction
 } TileType;
 
-// extern uint8_t TILEMAP[SCREEN_TILES];
-extern TileType SCREEN[SCREEN_HEIGHT][SCREEN_WIDTH];
+extern TileType SCREEN[HEIGHT][WIDTH];
 
 error world_init(gfx_context* ctx);
 void world_set_tile(uint8_t x, uint8_t y, uint8_t tile);

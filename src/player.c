@@ -8,8 +8,6 @@ player_t player;
 
 error player_init(void)
 {
-    gfx_error err;
-
     gfx_sprite sprite = {
         .tile = 2,
         .flags = SPRITE_NONE,

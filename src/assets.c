@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <zvb_gfx.h>
+#include <zgdk/compress/rle.h>
+
 #include "assets.h"
 #include "world.h"
 
@@ -39,34 +41,39 @@ zos_err_t load_tileset(gfx_context* ctx, gfx_tileset_options* options) {
     return err;
 }
 
-zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, uint8_t map_y)
-{
+zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, uint8_t map_y) {
     (void)x;
     (void)y;
 
     uint8_t offset = (y * WORLD_WIDTH) + x;
-    zos_err_t err = zar_file_entry_from_index(&zar_file, offset, &entry);
-    if(err != ERR_SUCCESS) return err | 0xC0;
+    zos_err_t err = zar_file_entry_from_index(&zar_file, TILEMAP_OFFSET + offset, &entry);
+    if (err != ERR_SUCCESS) return err | 0xC0;
 
     uint16_t size = entry.size;
-    err = zar_file_read(&zar_file, &entry, data, &size);
-    if(err != ERR_SUCCESS) return err | 0xC0;
+    uint8_t *rle_data = &data[(WIDTH * HEIGHT)];
+    err = zar_file_read(&zar_file, &entry, rle_data, &size);
+    if (err != ERR_SUCCESS) return err | 0xC0;
 
-    uint8_t line[20];
+    // decompress the RLE'd map
+    decompress_rle(rle_data, size, data);
 
-    for (uint16_t row = 0; row < 15; row++) {
-        uint16_t offset = row * 20;
-        for (uint16_t col = 0; col < 20; col++) {
+    uint8_t line[WIDTH];
+
+    for (uint16_t row = 0; row < HEIGHT; row++) {
+        uint16_t offset = row * WIDTH;
+        for (uint16_t col = 0; col < WIDTH; col++) {
             uint8_t tile = data[offset + col];
             TileType type = TILE_OPEN;
 
-            if((tile >= 1) && (tile <= 13)) {
+            if ((tile >= 1) && (tile <= 13)) {
                 type = TILE_WALL;
-            } else if((tile >= 16) && (tile <= 28)) {
+            } else if ((tile >= 16) && (tile <= 28)) {
                 type = TILE_WATER;
-            } else if(tile == 43) {
+            } else if ((tile == 14) || (tile == 30)) {
+                type = TILE_OPEN;
+            } else if (tile == 43) {
                 type = TILE_CHEST;
-            } else if(tile > 0) {
+            } else if (tile > 0) {
                 type = TILE_UNKNOWN;
             }
 
@@ -74,8 +81,8 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
 
             line[col] = tile;
         }
-        err = gfx_tilemap_load(ctx, line, 20, 0, (map_x * 20), (map_y * 15) + row);
-        if(err != ERR_SUCCESS) return err | 0x80;
+        err = gfx_tilemap_load(ctx, line, sizeof(line), 0, (map_x * WIDTH), (map_y * HEIGHT) + row);
+        if (err != ERR_SUCCESS) return err | 0x80;
     }
 
     return ERR_SUCCESS;

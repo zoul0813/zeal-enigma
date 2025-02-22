@@ -10,7 +10,7 @@
 #define SLIDE_SPEED 4
 
 Vector2_u8 world_position;
-TileType SCREEN[SCREEN_HEIGHT][SCREEN_WIDTH];
+TileType SCREEN[HEIGHT][WIDTH];
 
 /** WORLD FUNCTIONS */
 
@@ -18,9 +18,9 @@ error world_init(gfx_context *ctx) {
     // load the screen the player starts on
     world_position.x = 0;
     world_position.y = 0;
-    zos_err_t err = load_tilemap(ctx, world_position.x, world_position.y, 1, 0);
+    zos_err_t err = load_tilemap(ctx, world_position.x, world_position.y, 0, 0);
     if(err != ERR_SUCCESS) return err;
-    tilemap_scroll_x(0, SCREEN_WIDTH);
+    tilemap_scroll_x(0, 0);
     return ERR_SUCCESS;
 }
 
