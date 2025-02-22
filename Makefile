@@ -92,11 +92,13 @@ endif
 # GFX_STRIP=48
 ENABLE_ZAR=1
 GFX_BITS=4
+TILED_COMPRESSED=1
+TILED_SIZE=40x21
+TILED_LAYER=3
+ASSETS_INPUT=assets
+ASSETS_OUTPUT=assets/archive
 
-all:: clean-assets $(OUTPUT_DIR)
-	@echo "Creating asset bundle..."
-	mkdir -p assets/archive
-	# ./map2screen.py -i assets/world.tmx -m assets/archive/scrn.ztm -l 1 -s 20x15
+all:: clean-assets
 
 include $(ZGDK_PATH)/base_sdcc.mk
 
@@ -104,9 +106,8 @@ include $(ZGDK_PATH)/base_sdcc.mk
 
 all::
 	mkdir -p assets/archive
-	cp assets/tileset.ztp assets/tileset.zts assets/archive
-	$(ZAR_PATH)/zar.py -i assets/archive -o bin/world.zar
-	ls -l bin/world.zar
+	$(ZAR_PATH)/zar.py -i assets/archive -o bin/enigma.zar
+	ls -l bin/enigma.zar
 
 clean-assets:
 	rm -rf assets/archive

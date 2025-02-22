@@ -3,4 +3,5 @@ bin/
 release/
 tmp/
 assets/*.zt[spm]
+assets/archive/
 *.tiled-session

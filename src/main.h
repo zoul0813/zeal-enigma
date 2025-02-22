@@ -10,10 +10,10 @@
 #define ACTION_CONTINUE 1
 #define ACTION_QUIT     10
 
-#define SCREEN_WIDTH  320
-#define SCREEN_HEIGHT 240
-#define WIDTH         20
-#define HEIGHT        15
+#define SCREEN_WIDTH  640
+#define SCREEN_HEIGHT 480
+#define WIDTH         40
+#define HEIGHT        30
 
 #define LEVEL_LAYER 0
 #define UI_LAYER    1
@@ -35,6 +35,7 @@ void init(void);
 void deinit(void);
 void reset(void);
 uint8_t input(void);
+void clear_tilemap(uint8_t layer, uint8_t x, uint8_t y, uint16_t width, uint16_t height);
 error load_level(uint8_t which);
 
 void update(void);
