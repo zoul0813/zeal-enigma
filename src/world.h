@@ -10,13 +10,13 @@
 #define ROOM_WIDTH     WIDTH
 #define ROOM_HEIGHT    21
 #define ROOM_OFFSET_X  0
-#define ROOM_OFFSET_Y  0
+#define ROOM_OFFSET_Y  4
 #define TILEMAP_OFFSET 0
 
-#define WORLD_START_X  0
-#define WORLD_START_Y  0
-#define WORLD_PLAYER_X (SCREEN_WIDTH / 2)
-#define WORLD_PLAYER_Y (SCREEN_HEIGHT / 2)
+#define WORLD_START_X  3
+#define WORLD_START_Y  3
+#define WORLD_PLAYER_X ((WIDTH / 4) * 16)
+#define WORLD_PLAYER_Y (((HEIGHT / 4) * 2) * 16)
 
 typedef void (*transition_callback_t)(uint16_t x, uint16_t y);
 

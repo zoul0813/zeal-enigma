@@ -7,27 +7,32 @@
  * It is assumed the viewport is always the screen 0,1 on the tilemap
  */
 
-#define SLIDE_SPEED 4
+#define SLIDE_SPEED  4
 
 Vector2_u8 world_position;
 TileType SCREEN[ROOM_HEIGHT][ROOM_WIDTH];
 
 /** WORLD FUNCTIONS */
 
-error world_init(gfx_context *ctx) {
+error world_init(gfx_context* ctx)
+{
     // load the screen the player starts on
     world_position.x = WORLD_START_X;
     world_position.y = WORLD_START_Y;
-    zos_err_t err = load_tilemap(ctx, world_position.x, world_position.y, 0, 0);
-    if (err != ERR_SUCCESS) return err;
+    zos_err_t err    = load_tilemap(ctx, world_position.x, world_position.y, 0, 0);
+    if (err != ERR_SUCCESS)
+        return err;
     tilemap_scroll_x(0, 0);
     return ERR_SUCCESS;
 }
 
-void world_set_tile(uint8_t x, uint8_t y, uint8_t tile) {
+void world_set_tile(uint8_t x, uint8_t y, uint8_t tile)
+{
     // out of bounds, ignore
-    if (x >= WIDTH) return;
-    if (y >= HEIGHT) return;
+    if (x >= WIDTH)
+        return;
+    if (y >= HEIGHT)
+        return;
 
     // place tile on screen
     gfx_tilemap_place(&vctx, tile, 0, x + WIDTH, y);
@@ -39,7 +44,8 @@ void world_set_tile(uint8_t x, uint8_t y, uint8_t tile) {
 
 /** SCREEN FUNCTIONS */
 
-void screen_slide(Point tilemap, const Edge edge, const Point point, const transition_callback_t callback) {
+void screen_slide(Point tilemap, const Edge edge, const Point point, const transition_callback_t callback)
+{
     uint8_t frames = 0;
 
     Direction world_direction = {
@@ -61,36 +67,28 @@ void screen_slide(Point tilemap, const Edge edge, const Point point, const trans
     switch (edge) {
         case EdgeLeft:
             world_direction.x = DIRECTION_LEFT * SLIDE_SPEED;
-            frames = SCREEN_WIDTH / SLIDE_SPEED;
+            frames            = SCREEN_WIDTH / SLIDE_SPEED;
             break;
         case EdgeRight:
             world_direction.x = DIRECTION_RIGHT * SLIDE_SPEED;
-            frames = SCREEN_WIDTH / SLIDE_SPEED;
+            frames            = SCREEN_WIDTH / SLIDE_SPEED;
             break;
         case EdgeTop:
             world_direction.y = DIRECTION_UP * SLIDE_SPEED;
-            frames = SCREEN_HEIGHT / SLIDE_SPEED;  // this will cause v-slides to be faster than h-slides :think:
+            frames = SCREEN_HEIGHT / SLIDE_SPEED; // this will cause v-slides to be faster than h-slides :think:
             break;
         case EdgeBottom:
             world_direction.y = DIRECTION_DOWN * SLIDE_SPEED;
-            frames = SCREEN_HEIGHT / SLIDE_SPEED;  // this will cause v-slides to be faster than h-slides :think:
+            frames = SCREEN_HEIGHT / SLIDE_SPEED; // this will cause v-slides to be faster than h-slides :think:
             break;
     }
 
     // determine direction of player
     switch (edge) {
-        case EdgeLeft:
-            player_direction.x = DIRECTION_LEFT * SLIDE_SPEED;
-            break;
-        case EdgeRight:
-            player_direction.x = DIRECTION_RIGHT * SLIDE_SPEED;
-            break;
-        case EdgeTop:
-            player_direction.y = DIRECTION_UP * SLIDE_SPEED;
-            break;
-        case EdgeBottom:
-            player_direction.y = DIRECTION_DOWN * SLIDE_SPEED;
-            break;
+        case EdgeLeft: player_direction.x = DIRECTION_LEFT * SLIDE_SPEED; break;
+        case EdgeRight: player_direction.x = DIRECTION_RIGHT * SLIDE_SPEED; break;
+        case EdgeTop: player_direction.y = DIRECTION_UP * SLIDE_SPEED; break;
+        case EdgeBottom: player_direction.y = DIRECTION_DOWN * SLIDE_SPEED; break;
     }
 
     // slide the player the few extra pixels
@@ -123,22 +121,15 @@ void screen_slide(Point tilemap, const Edge edge, const Point point, const trans
 
     // make sure the player is positioned properly
     switch (edge) {
-        case EdgeLeft:
-            callback(SCREEN_WIDTH, point.y);
-            break;
-        case EdgeRight:
-            callback(SPRITE_WIDTH, point.y);
-            break;
-        case EdgeTop:
-            callback(point.x, SCREEN_HEIGHT);
-            break;
-        case EdgeBottom:
-            callback(point.x, SPRITE_HEIGHT);
-            break;
+        case EdgeLeft: callback(SCREEN_WIDTH, point.y); break;
+        case EdgeRight: callback(SPRITE_WIDTH, point.y); break;
+        case EdgeTop: callback(point.x, SCREEN_HEIGHT); break;
+        case EdgeBottom: callback(point.x, SPRITE_HEIGHT); break;
     }
 }
 
-void screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback) {
+void screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback)
+{
     Vector2_u8 old_world = {
         .x = world_position.x,
         .y = world_position.y,
@@ -150,12 +141,8 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
     };
 
     switch (edge) {
-        case EdgeLeft:
-            load_tilemap(&vctx, world.x, world.y, 0, 0);
-            break;
-        case EdgeRight:
-            load_tilemap(&vctx, world.x, world.y, 2, 0);
-            break;
+        case EdgeLeft: load_tilemap(&vctx, world.x, world.y, 0, 0); break;
+        case EdgeRight: load_tilemap(&vctx, world.x, world.y, 2, 0); break;
         case EdgeTop:
             // load the old map beneath
             load_tilemap(&vctx, old_world.x, old_world.y, 1, 1);
@@ -169,9 +156,7 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
 
             tilemap.y = SCREEN_HEIGHT;
             break;
-        case EdgeBottom:
-            load_tilemap(&vctx, world.x, world.y, 1, 1);
-            break;
+        case EdgeBottom: load_tilemap(&vctx, world.x, world.y, 1, 1); break;
     }
 
     screen_slide(tilemap, edge, point, callback);
@@ -187,10 +172,13 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
     world_position.y = world.y;
 }
 
-TileType screen_get_tile(const uint8_t x, const uint8_t y) {
+TileType screen_get_tile(const uint8_t x, const uint8_t y)
+{
     // out of bounds, assume TILE_OPEN
-    if (x >= WIDTH) return TILE_OPEN;
-    if (y >= HEIGHT) return TILE_OPEN;
+    if (x >= WIDTH)
+        return TILE_OPEN;
+    if (y >= HEIGHT)
+        return TILE_OPEN;
     return SCREEN[y][x];
 }
 
@@ -203,7 +191,8 @@ TileType screen_get_tile(const uint8_t x, const uint8_t y) {
  * @param edge The edge of the current screen the player is exiting from
  * @returns 1 if transition occurred, 0 is no transition occurred
  */
-uint8_t screen_transition(const Edge edge, const Point point, const transition_callback_t callback) {
+uint8_t screen_transition(const Edge edge, const Point point, const transition_callback_t callback)
+{
     uint8_t transition = 0;
 
     Vector2_u8 new_world = {

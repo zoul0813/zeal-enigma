@@ -5,12 +5,14 @@
 #include "main.h"
 #include "world.h"
 
+#define PLAYER_TILE 16
+
 player_t player;
 
 error player_init(void)
 {
     gfx_sprite sprite = {
-        .tile = 16,
+        .tile = PLAYER_TILE,
         .flags = SPRITE_NONE,
     };
 
@@ -19,7 +21,7 @@ error player_init(void)
 
     player.sprite_head = sprites_register(sprite);
 
-    sprite.tile = 32;
+    sprite.tile += 9; // body is always header + 9
     player.sprite_body = sprites_register(sprite);
 
     return GFX_SUCCESS;

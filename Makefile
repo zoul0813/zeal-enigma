@@ -89,7 +89,7 @@ ifndef ZGDK_PATH
 	$(error "Failure: ZGDK_PATH variable not found. It must point to ZGDK path.")
 endif
 
-GFX_STRIP=64
+# GFX_STRIP=64
 ENABLE_ZAR=1
 GFX_BITS=4
 # GFX_COMPRESSED=1

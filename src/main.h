@@ -15,9 +15,7 @@
 #define WIDTH         40
 #define HEIGHT        30
 
-#define LAYER0     0
-#define LAYER1     1
-#define EMPTY_TILE 0
+#define EMPTY_TILE 0x0F
 
 #define LEFT1     (input1 & BUTTON_LEFT)
 #define RIGHT1    (input1 & BUTTON_RIGHT)
@@ -30,12 +28,14 @@
 
 typedef uint8_t error;
 
+extern uint8_t buffer[SCREEN_WIDTH];
+
 void on_error(zos_err_t err);
 void init(void);
 void deinit(void);
 void reset(void);
 uint8_t input(void);
-void clear_tilemap(uint8_t layer, uint8_t x, uint8_t y, uint16_t width, uint16_t height);
+void clear_tilemap(uint8_t layer, uint8_t tile, uint8_t x, uint8_t y, uint16_t width, uint16_t height);
 error load_level(uint8_t which);
 
 void update(void);

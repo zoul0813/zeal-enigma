@@ -15,21 +15,21 @@ zos_err_t load_asset_file(const char *path) {
     return err;
 }
 
-zos_err_t load_palette(gfx_context* ctx) {
-    zos_err_t err = zar_file_entry_from_name(&zar_file, "tileset.ztp", &entry);
+zos_err_t load_palette(gfx_context* ctx, const char *path, uint8_t from) {
+    zos_err_t err = zar_file_entry_from_name(&zar_file, path, &entry);
     if(err != ERR_SUCCESS) return err | 0xC0;
 
     uint16_t size = entry.size;
     err = zar_file_read(&zar_file, &entry, data, &size);
     if(err != ERR_SUCCESS) return err | 0xC0;
 
-    err = gfx_palette_load(ctx, data, size, 0);
+    err = gfx_palette_load(ctx, data, size, from);
     if(err != ERR_SUCCESS) return err | 0x80;
     return err;
 }
 
-zos_err_t load_tileset(gfx_context* ctx, gfx_tileset_options* options) {
-    zos_err_t err = zar_file_entry_from_name(&zar_file, "tileset.zts", &entry);
+zos_err_t load_tileset(gfx_context* ctx, const char *path, gfx_tileset_options* options) {
+    zos_err_t err = zar_file_entry_from_name(&zar_file, path, &entry);
     if(err != ERR_SUCCESS) return err | 0xC0;
 
     uint16_t size = entry.size;
@@ -74,7 +74,7 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
             line[col] = tile;
         }
 
-        err = gfx_tilemap_load(ctx, line, ROOM_WIDTH, LAYER0, (map_x * WIDTH), (map_y * HEIGHT) + row);
+        err = gfx_tilemap_load(ctx, line, ROOM_WIDTH, LAYER0, (map_x * WIDTH) + ROOM_OFFSET_X, (map_y * HEIGHT) + row + ROOM_OFFSET_Y);
         if (err != ERR_SUCCESS) return err | 0x80;
     }
 
