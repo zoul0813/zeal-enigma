@@ -6,7 +6,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#define PLAYER_SPEED (2U)
+#define PLAYER_SPEED (3U)
 
 typedef struct {
         Point point;

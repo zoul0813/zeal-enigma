@@ -10,17 +10,17 @@ player_t player;
 error player_init(void)
 {
     gfx_sprite sprite = {
-        .tile = 3,
+        .tile = 16,
         .flags = SPRITE_NONE,
     };
 
     player.point.x = WORLD_PLAYER_X;
     player.point.y = WORLD_PLAYER_Y;
 
-    player.sprite_body = sprites_register(sprite);
-
-    sprite.tile = 4;
     player.sprite_head = sprites_register(sprite);
+
+    sprite.tile = 32;
+    player.sprite_body = sprites_register(sprite);
 
     return GFX_SUCCESS;
 }
