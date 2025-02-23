@@ -20,7 +20,7 @@ error player_init(void)
     player.sprite_body = sprites_register(sprite);
 
     sprite.tile = 4;
-    player.sprite_body = sprites_register(sprite);
+    player.sprite_head = sprites_register(sprite);
 
     return GFX_SUCCESS;
 }
