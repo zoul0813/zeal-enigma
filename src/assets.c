@@ -50,38 +50,31 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
     if (err != ERR_SUCCESS) return err | 0xC0;
 
     uint16_t size = entry.size;
-    uint8_t *rle_data = &data[(WIDTH * HEIGHT)];
+    uint8_t *rle_data = &data[(ROOM_WIDTH * ROOM_HEIGHT)];
     err = zar_file_read(&zar_file, &entry, rle_data, &size);
     if (err != ERR_SUCCESS) return err | 0xC0;
 
     // decompress the RLE'd map
     decompress_rle(rle_data, size, data);
 
-    uint8_t line[WIDTH];
+    uint8_t line[ROOM_WIDTH];
 
-    for (uint16_t row = 0; row < HEIGHT; row++) {
-        uint16_t offset = row * WIDTH;
-        for (uint16_t col = 0; col < WIDTH; col++) {
-            uint8_t tile = data[offset + col];
+    for (uint8_t row = 0; row < ROOM_HEIGHT; row++) {
+        for (uint8_t col = 0; col < ROOM_WIDTH; col++) {
+            uint8_t tile = data[(row * ROOM_WIDTH) + col];
             TileType type = TILE_OPEN;
 
-            if ((tile >= 1) && (tile <= 13)) {
+            if ((tile == 1)) {
                 type = TILE_WALL;
-            } else if ((tile >= 16) && (tile <= 28)) {
-                type = TILE_WATER;
-            } else if ((tile == 14) || (tile == 30)) {
-                type = TILE_OPEN;
-            } else if (tile == 43) {
-                type = TILE_CHEST;
             } else if (tile > 0) {
                 type = TILE_UNKNOWN;
             }
 
             SCREEN[row][col] = type;
-
             line[col] = tile;
         }
-        err = gfx_tilemap_load(ctx, line, sizeof(line), 0, (map_x * WIDTH), (map_y * HEIGHT) + row);
+
+        err = gfx_tilemap_load(ctx, line, ROOM_WIDTH, LAYER0, (map_x * WIDTH), (map_y * HEIGHT) + row);
         if (err != ERR_SUCCESS) return err | 0x80;
     }
 

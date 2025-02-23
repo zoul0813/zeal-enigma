@@ -3,25 +3,26 @@
 #include <zvb_sprite.h>
 #include "player.h"
 #include "main.h"
+#include "world.h"
 
 player_t player;
 
 error player_init(void)
 {
     gfx_sprite sprite = {
-        .tile = 2,
+        .tile = 3,
         .flags = SPRITE_NONE,
     };
 
-    player.point.x     = SCREEN_WIDTH / 2;
-    player.point.y     = SCREEN_HEIGHT / 2;
+    player.point.x = WORLD_PLAYER_X;
+    player.point.y = WORLD_PLAYER_Y;
 
     player.sprite_body = sprites_register(sprite);
 
-    sprite.tile = 1;
+    sprite.tile = 4;
     player.sprite_body = sprites_register(sprite);
 
-    return ERR_SUCCESS;
+    return GFX_SUCCESS;
 }
 
 error player_deinit(void)

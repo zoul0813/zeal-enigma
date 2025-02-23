@@ -15,18 +15,18 @@
 #define WIDTH         40
 #define HEIGHT        30
 
-#define LEVEL_LAYER 0
-#define UI_LAYER    1
-#define EMPTY_TILE  0
+#define LAYER0     0
+#define LAYER1     1
+#define EMPTY_TILE 0
 
-#define LEFT1   (input1 & BUTTON_LEFT)
-#define RIGHT1  (input1 & BUTTON_RIGHT)
-#define UP1     (input1 & BUTTON_UP)
-#define DOWN1   (input1 & BUTTON_DOWN)
-#define BUTTON1_B  (input1 & BUTTON_B)
-#define BUTTON1_A  (input1 & BUTTON_A)
-#define START1 (input1 & BUTTON_START)
-#define SELECT1 (input1 & BUTTON_SELECT)
+#define LEFT1     (input1 & BUTTON_LEFT)
+#define RIGHT1    (input1 & BUTTON_RIGHT)
+#define UP1       (input1 & BUTTON_UP)
+#define DOWN1     (input1 & BUTTON_DOWN)
+#define BUTTON1_B (input1 & BUTTON_B)
+#define BUTTON1_A (input1 & BUTTON_A)
+#define START1    (input1 & BUTTON_START)
+#define SELECT1   (input1 & BUTTON_SELECT)
 
 typedef uint8_t error;
 

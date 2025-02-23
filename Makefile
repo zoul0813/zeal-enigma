@@ -89,12 +89,14 @@ ifndef ZGDK_PATH
 	$(error "Failure: ZGDK_PATH variable not found. It must point to ZGDK path.")
 endif
 
-# GFX_STRIP=48
+GFX_STRIP=64
 ENABLE_ZAR=1
 GFX_BITS=4
+# GFX_COMPRESSED=1
 TILED_COMPRESSED=1
 TILED_SIZE=40x21
 TILED_LAYER=3
+TILED_OUTPUT=assets/archive/__room.map
 ASSETS_INPUT=assets
 ASSETS_OUTPUT=assets/archive
 

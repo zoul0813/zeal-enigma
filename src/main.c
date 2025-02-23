@@ -13,6 +13,15 @@
 
 gfx_context vctx;
 
+
+void handle_error(zos_err_t err, const char* message, uint8_t fatal) {
+    if(err != ERR_SUCCESS) {
+        if(fatal) deinit();
+        printf("\nError[%d] (%02x) failed to %s", err, err, message);
+        if(fatal) exit(err);
+    }
+}
+
 int main(void) {
     init();
 reset:
@@ -29,14 +38,6 @@ quit_game:
     return 0;
 }
 
-void handle_error(zos_err_t err, const char* message, uint8_t fatal) {
-    if(err != ERR_SUCCESS) {
-        if(fatal) deinit();
-        printf("\nError[%d] (%02x) failed to %s", err, err, message);
-        if(fatal) exit(err);
-    }
-}
-
 void init(void) {
     zos_err_t err;
     err = keyboard_init();
@@ -46,26 +47,36 @@ void init(void) {
 
     err = load_asset_file("enigma.zar");
 
+    sprites_register_arena(SPRITE_ARENA, MAX_SPRITES);
+
+    // ascii_map(' ', 1, 90);
+    // ascii_map('A', 16, 64);
+    // ascii_map('a', 16, 64);
+    // ascii_map('Q', 10, 80);
+    // ascii_map('q', 10, 80);
+    // ascii_map('0', 10, 96);
+
     // disable the screen to prevent artifacts from showing
     gfx_enable_screen(0);
 
     err = gfx_initialize(ZVB_CTRL_VID_MODE_GFX_640_4BIT, &vctx);
     handle_error(err, "init graphics", 1);
 
+    clear_tilemap(LAYER0, 0, 0, 80, 60);  // clear all layer0 memory
+    clear_tilemap(LAYER1, 0, 0, 80, 60);  // clear all layer1 memory
+
     err = load_palette(&vctx);
     handle_error(err, "load palette", 1);
 
     gfx_tileset_options options = {
         .compression = TILESET_COMP_4BIT,
+        .pal_offset = 0,
     };
     err = load_tileset(&vctx, &options);
     handle_error(err, "load tileset", 1);
 
     err = player_init();
     handle_error(err, "init player", 1);
-
-    clear_tilemap(0, 0, 80, 60, 0);  // clear all layer0 memory
-    clear_tilemap(0, 0, 80, 60, 1);  // clear all layer1 memory
 
     err = world_init(&vctx);
     handle_error(err, "initialize world", 1);
@@ -103,12 +114,11 @@ uint8_t input(void) {
     return 0;
 }
 
-
 void clear_tilemap(uint8_t layer, uint8_t x, uint8_t y, uint16_t width, uint16_t height) {
     uint8_t line[80];
     for (uint16_t row = 0; row < height; row++) {
         for (uint16_t col = 0; col < width; col++) {
-            line[col] = 0xFF;
+            line[col] = EMPTY_TILE;
         }
         gfx_error err = gfx_tilemap_load(&vctx, line, width, layer, x, y + row);
         handle_error(err, "clear tilemap", 1);

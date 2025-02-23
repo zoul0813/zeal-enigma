@@ -2,8 +2,8 @@
 #include <zvb_gfx.h>
 #include <zar.h>
 
-#define MAX_SPRITES   3
-#define MAX_DATA_KB   16
+#define MAX_SPRITES   16
+#define MAX_DATA_KB   8
 
 extern gfx_sprite SPRITE_ARENA[MAX_SPRITES];
 extern uint8_t data[MAX_DATA_KB * 1024];
