@@ -57,7 +57,7 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
     // decompress the RLE'd map
     decompress_rle(rle_data, size, data);
 
-    uint8_t line[ROOM_WIDTH];
+    uint8_t line[ROOM_WIDTH + 1];
 
     for (uint8_t row = 0; row < ROOM_HEIGHT; row++) {
         for (uint8_t col = 0; col < ROOM_WIDTH; col++) {
