@@ -5,16 +5,32 @@
 #ifndef WORLD_H
 #define WORLD_H
 
+// size of world in rooms
 #define WORLD_WIDTH    8
 #define WORLD_HEIGHT   8
+
+// size of a room
 #define ROOM_WIDTH     WIDTH
 #define ROOM_HEIGHT    21
+
+// tile coordinates for where the map starts
 #define ROOM_OFFSET_X  0
 #define ROOM_OFFSET_Y  4
+
+// absolute offsets for the room edges
+#define ROOM_LEFT_PX   (0)
+#define ROOM_RIGHT_PX  (SCREEN_WIDTH)
+#define ROOM_TOP_PX    (ROOM_OFFSET_Y * SPRITE_HEIGHT)
+#define ROOM_BOTTOM_PX (ROOM_TOP_PX + (ROOM_HEIGHT * SPRITE_HEIGHT))
+
+// offset for where the map starts in the zar
 #define TILEMAP_OFFSET 0
 
+// starting room
 #define WORLD_START_X  3
 #define WORLD_START_Y  3
+
+// starting position of player on screen
 #define WORLD_PLAYER_X ((WIDTH / 4) * 16)
 #define WORLD_PLAYER_Y (((HEIGHT / 4) * 2) * 16)
 

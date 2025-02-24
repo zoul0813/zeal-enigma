@@ -60,7 +60,7 @@ Edge player_move(void)
     ty = (y >> 4) - 1;
     if(player.direction.y > 0) ty++;
 
-    TileType type = screen_get_tile(tx, ty);
+    TileType type = screen_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y);
 
     switch(type) {
         case TILE_UNKNOWN: // fall thru
@@ -81,10 +81,10 @@ Edge player_move(void)
 
     player_set_xy(x, y);
 
-    if(x < SPRITE_WIDTH) return EdgeLeft;
-    else if(x > SCREEN_WIDTH) return EdgeRight;
-    if(y < SPRITE_HEIGHT) return EdgeTop;
-    else if(y > SCREEN_HEIGHT) return EdgeBottom;
+    if(x < (ROOM_LEFT_PX + SPRITE_WIDTH)) return EdgeLeft;
+    else if(x > (ROOM_RIGHT_PX)) return EdgeRight;
+    if(y < (ROOM_TOP_PX + SPRITE_HEIGHT)) return EdgeTop;
+    else if(y > (ROOM_BOTTOM_PX)) return EdgeBottom;
     return EdgeNone;
 }
 
