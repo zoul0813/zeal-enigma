@@ -64,11 +64,14 @@ void init(void) {
     err = gfx_initialize(ZVB_CTRL_VID_MODE_GFX_640_4BIT, &vctx);
     handle_error(err, "init graphics", 1);
 
-    clear_tilemap(LAYER0, EMPTY_TILE, 0, 0, WIDTH, HEIGHT);  // clear all layer0 memory
+    clear_tilemap(LAYER0, 0, 0, 0, WIDTH, HEIGHT);  // clear all layer0 memory
     clear_tilemap(LAYER1, 0, 0, 0, WIDTH, HEIGHT);
 
     err = load_palette(&vctx, "tileset.ztp", 0);
     handle_error(err, "load palette", 1);
+
+    // err = gfx_tileset_add_color_tile(&vctx, EMPTY_TILE, 0);
+    // handle_error(err, "create empty tile", 1);
 
     uint16_t tile_offset = 0;
     gfx_tileset_options options = {
@@ -107,9 +110,18 @@ void init(void) {
     err = player_init();
     handle_error(err, "init player", 1);
 
+    // TODO: set red background for Banner/HUD
+    // clear_tilemap(LAYER1, 1 << 4, 0, 0, WIDTH, 4);
+    // clear_tilemap(LAYER1, 1 << 4, 0, HEIGHT-5, WIDTH, 5);
+    // clear_tilemap(LAYER1, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
+
     err = world_init(&vctx);
     handle_error(err, "initialize world", 1);
 
+    sprintf(buffer, "%03d %03d", world_position.x, world_position.y);
+    nprint_string_layer(&vctx, buffer, 7, LAYER0, 0, 0);
+
+#if !defined(DEBUG) || DEBUG == 0
     sprintf(buffer, "1985 Enigma by CBM UK Ltd");
     nprint_string_layer(&vctx, buffer, 25, LAYER0, 2, 0);
 
@@ -130,6 +142,7 @@ void init(void) {
     nprint_string_layer(&vctx, buffer, 33, LAYER0, 2, HEIGHT-3);
     sprintf(buffer, "ENERGY:");
     nprint_string_layer(&vctx, buffer, 7, LAYER0, 2, HEIGHT-2);
+#endif
 
     gfx_enable_screen(1);
 }
@@ -188,7 +201,7 @@ void update(void) {
     if (screen_edge != EdgeNone) {
         screen_transition(screen_edge, player.point, player_set_xy);
         sprintf(buffer, "%03d %03d", world_position.x, world_position.y);
-        nprint_string(&vctx, buffer, 7, 0, 0);
+        nprint_string_layer(&vctx, buffer, 7, LAYER0, 0, 0);
     }
 }
 

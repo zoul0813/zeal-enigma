@@ -27,8 +27,8 @@
 #define TILEMAP_OFFSET 0
 
 // starting room
-#define WORLD_START_X  3
-#define WORLD_START_Y  3
+#define WORLD_START_X  0
+#define WORLD_START_Y  0
 
 // starting position of player on screen
 #define WORLD_PLAYER_X ((WIDTH / 4) * 16)

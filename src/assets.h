@@ -3,10 +3,11 @@
 #include <zar.h>
 
 #define MAX_SPRITES   16
-#define MAX_DATA_KB   8
+#define MAX_DATA_KB   6
 
 extern gfx_sprite SPRITE_ARENA[MAX_SPRITES];
 extern uint8_t data[MAX_DATA_KB * 1024];
+extern uint16_t palette[16];
 extern zar_file_t zar_file;
 extern zar_file_entry_t entry;
 

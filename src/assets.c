@@ -10,6 +10,8 @@ zar_file_t zar_file;
 zar_file_entry_t entry;
 uint8_t data[MAX_DATA_KB * 1024];
 
+uint16_t palette[16];
+
 zos_err_t load_asset_file(const char *path) {
     zos_err_t err = zar_file_open(path, &zar_file);
     return err;
@@ -20,11 +22,12 @@ zos_err_t load_palette(gfx_context* ctx, const char *path, uint8_t from) {
     if(err != ERR_SUCCESS) return err | 0xC0;
 
     uint16_t size = entry.size;
-    err = zar_file_read(&zar_file, &entry, data, &size);
+    err = zar_file_read(&zar_file, &entry, (uint8_t*)&palette, &size);
     if(err != ERR_SUCCESS) return err | 0xC0;
 
-    err = gfx_palette_load(ctx, data, size, from);
+    err = gfx_palette_load(ctx, &palette, size, from);
     if(err != ERR_SUCCESS) return err | 0x80;
+
     return err;
 }
 

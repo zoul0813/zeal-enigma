@@ -44,127 +44,28 @@ void world_set_tile(uint8_t x, uint8_t y, uint8_t tile)
 
 /** SCREEN FUNCTIONS */
 
-void screen_slide(Point tilemap, const Edge edge, const Point point, const transition_callback_t callback)
-{
-    uint8_t frames = 0;
-
-    Direction world_direction = {
-        .x = 0,
-        .y = 0,
-    };
-
-    Direction player_direction = {
-        .x = 0,
-        .y = 0,
-    };
-
-    Point player_pos = {
-        .x = point.x,
-        .y = point.y,
-    };
-
-    // determine direction/timing of screen
-    switch (edge) {
-        case EdgeLeft:
-            world_direction.x = DIRECTION_LEFT * SLIDE_SPEED;
-            frames            = SCREEN_WIDTH / SLIDE_SPEED;
-            break;
-        case EdgeRight:
-            world_direction.x = DIRECTION_RIGHT * SLIDE_SPEED;
-            frames            = SCREEN_WIDTH / SLIDE_SPEED;
-            break;
-        case EdgeTop:
-            world_direction.y = DIRECTION_UP * SLIDE_SPEED;
-            frames = SCREEN_HEIGHT / SLIDE_SPEED; // this will cause v-slides to be faster than h-slides :think:
-            break;
-        case EdgeBottom:
-            world_direction.y = DIRECTION_DOWN * SLIDE_SPEED;
-            frames = SCREEN_HEIGHT / SLIDE_SPEED; // this will cause v-slides to be faster than h-slides :think:
-            break;
-    }
-
-    // determine direction of player
-    switch (edge) {
-        case EdgeLeft: player_direction.x = DIRECTION_LEFT * SLIDE_SPEED; break;
-        case EdgeRight: player_direction.x = DIRECTION_RIGHT * SLIDE_SPEED; break;
-        case EdgeTop: player_direction.y = DIRECTION_UP * SLIDE_SPEED; break;
-        case EdgeBottom: player_direction.y = DIRECTION_DOWN * SLIDE_SPEED; break;
-    }
-
-    // slide the player the few extra pixels
-    for (uint8_t x = SPRITE_WIDTH / SLIDE_SPEED; x > 0; x--) {
-        player_pos.x += player_direction.x;
-        player_pos.y += player_direction.y;
-        callback(player_pos.x, player_pos.y);
-
-        gfx_wait_vblank(&vctx);
-        sprites_render(&vctx);
-        gfx_wait_end_vblank(&vctx);
-    }
-
-    // slide the player/room into view
-    for (uint8_t x = frames; x > 0; x--) {
-        tilemap.x += world_direction.x;
-        tilemap.y += world_direction.y;
-
-        player_pos.x += -player_direction.x;
-        player_pos.y += -player_direction.y;
-        callback(player_pos.x, player_pos.y);
-
-        gfx_wait_vblank(&vctx);
-
-        tilemap_scroll(0, tilemap.x, tilemap.y);
-        sprites_render(&vctx);
-
-        gfx_wait_end_vblank(&vctx);
-    }
-
-    // make sure the player is positioned properly
-    switch (edge) {
-        case EdgeLeft: callback(SCREEN_WIDTH, point.y); break;
-        case EdgeRight: callback(SPRITE_WIDTH, point.y); break;
-        case EdgeTop: callback(point.x, SCREEN_HEIGHT); break;
-        case EdgeBottom: callback(point.x, SPRITE_HEIGHT); break;
-    }
-}
-
 void screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback)
 {
-    Vector2_u8 old_world = {
-        .x = world_position.x,
-        .y = world_position.y,
+    // palette swap
+    uint8_t palette_offset = ((world.x * world.y) % 9) + 4;
+    uint16_t new_palette[2] = {
+        palette[palette_offset],
+        palette[(palette_offset + 3) % 16],
     };
 
-    Point tilemap = {
-        .x = SCREEN_WIDTH,
-        .y = 0,
-    };
-
-    switch (edge) {
-        case EdgeLeft: load_tilemap(&vctx, world.x, world.y, 0, 0); break;
-        case EdgeRight: load_tilemap(&vctx, world.x, world.y, 2, 0); break;
-        case EdgeTop:
-            // load the old map beneath
-            load_tilemap(&vctx, old_world.x, old_world.y, 1, 1);
-            // jump to old map
-            gfx_wait_vblank(&vctx);
-            tilemap_scroll(0, SCREEN_WIDTH, SCREEN_HEIGHT);
-            gfx_wait_end_vblank(&vctx);
-
-            // load the new map above
-            load_tilemap(&vctx, world.x, world.y, 1, 0);
-
-            tilemap.y = SCREEN_HEIGHT;
-            break;
-        case EdgeBottom: load_tilemap(&vctx, world.x, world.y, 1, 1); break;
-    }
-
-    screen_slide(tilemap, edge, point, callback);
-
-    // load the current screen into 1,0 and jump to it
-    load_tilemap(&vctx, world.x, world.y, 1, 0);
+    // load the current screen into 0,0 and jump to it
     gfx_wait_vblank(&vctx);
-    tilemap_scroll(0, SCREEN_WIDTH, 0);
+    gfx_palette_load(&vctx, &new_palette, sizeof(new_palette), 1);
+    load_tilemap(&vctx, world.x, world.y, 0, 0);
+    gfx_wait_end_vblank(&vctx);
+
+    gfx_wait_vblank(&vctx);
+    switch (edge) {
+        case EdgeLeft: callback(ROOM_RIGHT_PX, point.y); break;
+        case EdgeRight: callback(ROOM_LEFT_PX + SPRITE_WIDTH, point.y); break;
+        case EdgeTop: callback(point.x, ROOM_BOTTOM_PX); break;
+        case EdgeBottom: callback(point.x, ROOM_TOP_PX + SPRITE_HEIGHT); break;
+    }
     gfx_wait_end_vblank(&vctx);
 
     // update to the latest
