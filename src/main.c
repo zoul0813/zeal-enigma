@@ -118,8 +118,8 @@ void init(void) {
     err = world_init(&vctx);
     handle_error(err, "initialize world", 1);
 
-    sprintf(buffer, "%03d %03d", world_position.x, world_position.y);
-    nprint_string_layer(&vctx, buffer, 7, LAYER0, 0, 0);
+    sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, (world_position.y * WORLD_WIDTH) + world_position.x);
+    nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
 
 #if !defined(DEBUG) || DEBUG == 0
     sprintf(buffer, "1985 Enigma by CBM UK Ltd");
@@ -200,8 +200,8 @@ void update(void) {
     Edge screen_edge = player_move();
     if (screen_edge != EdgeNone) {
         screen_transition(screen_edge, player.point, player_set_xy);
-        sprintf(buffer, "%03d %03d", world_position.x, world_position.y);
-        nprint_string_layer(&vctx, buffer, 7, LAYER0, 0, 0);
+        sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, (world_position.y * WORLD_WIDTH) + world_position.x);
+        nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
     }
 }
 

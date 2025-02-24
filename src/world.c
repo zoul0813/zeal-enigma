@@ -2,6 +2,7 @@
 
 #include "assets.h"
 #include "main.h"
+#include "gates.h"
 
 /**
  * It is assumed the viewport is always the screen 0,1 on the tilemap
@@ -58,6 +59,14 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
     gfx_palette_load(&vctx, &new_palette, sizeof(new_palette), 1);
     load_tilemap(&vctx, world.x, world.y, 0, 0);
     gfx_wait_end_vblank(&vctx);
+
+    uint8_t roomId = (world.y * WORLD_WIDTH) + world.x;
+    for(uint8_t i = 0; i < keys_len; i++) {
+        object_t *key = &keys[i];
+        if(key->room != roomId) continue;
+        if(key->flags != OBJECT_ACTIVE) continue;
+        gfx_tilemap_place(&vctx, KEYS_INDEX + i, LAYER0, key->x + ROOM_OFFSET_X, key->y + ROOM_OFFSET_Y);
+    }
 
     gfx_wait_vblank(&vctx);
     switch (edge) {
