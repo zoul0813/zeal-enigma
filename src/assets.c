@@ -54,7 +54,6 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
     err = zar_file_read(&zar_file, &entry, rle_data, &size);
     if (err != ERR_SUCCESS) return err | 0xC0;
 
-    // decompress the RLE'd map
     decompress_rle(rle_data, size, data);
 
     uint8_t line[ROOM_WIDTH + 1];

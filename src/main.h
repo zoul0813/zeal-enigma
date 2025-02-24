@@ -28,7 +28,7 @@
 
 typedef uint8_t error;
 
-extern uint8_t buffer[SCREEN_WIDTH];
+extern uint8_t buffer[WIDTH];
 
 void on_error(zos_err_t err);
 void init(void);
@@ -36,7 +36,6 @@ void deinit(void);
 void reset(void);
 uint8_t input(void);
 void clear_tilemap(uint8_t layer, uint8_t tile, uint8_t x, uint8_t y, uint16_t width, uint16_t height);
-error load_level(uint8_t which);
 
 void update(void);
 void draw_paused(uint8_t paused);

@@ -6,30 +6,22 @@
 #include <zos_video.h>
 #include <zgdk.h>
 
+#include "main.h"
 #include "assets.h"
 #include "world.h"
 #include "player.h"
-#include "main.h"
 
 gfx_context vctx;
-uint8_t buffer[SCREEN_WIDTH];
-
-void handle_error(zos_err_t err, const char* message, uint8_t fatal) {
-    if(err != ERR_SUCCESS) {
-        if(fatal) deinit();
-        printf("\nError[%d] (%02x) failed to %s", err, err, message);
-        if(fatal) exit(err);
-    }
-}
+uint8_t buffer[WIDTH];
 
 int main(void) {
     init();
 reset:
     reset();
-    load_level(0);
-    while(true) {
+
+    while (true) {
         uint8_t action = input();
-        if(action == ACTION_QUIT) goto quit_game;
+        if (action == ACTION_QUIT) goto quit_game;
         update();
         draw();
     }
@@ -38,14 +30,22 @@ quit_game:
     return 0;
 }
 
+void handle_error(zos_err_t err, const char* message, uint8_t fatal) {
+    if (err != ERR_SUCCESS) {
+        if (fatal) deinit();
+        printf("\nError[%d] (%02x) failed to %s\n", err, err, message);
+        if (fatal) exit(err);
+    }
+}
+
 void init(void) {
     zos_err_t err;
-    err = keyboard_init();
+    err = input_init(1);
     handle_error(err, "init keyboard", 1);
-    err = keyboard_flush();
-    handle_error(err, "flush keyboard", 1);
+    input_flush();
 
     err = load_asset_file("enigma.zar");
+	handle_error(err, "load zar", 1);
 
     sprites_register_arena(SPRITE_ARENA, MAX_SPRITES);
 
@@ -135,6 +135,10 @@ void init(void) {
 }
 
 void deinit(void) {
+    // reset the tilemap scroll
+    tilemap_scroll(0, 0, 0);
+    tilemap_scroll(1, 0, 0);
+
     // reset screen
     ioctl(DEV_STDOUT, CMD_RESET_SCREEN, NULL);
 
@@ -149,17 +153,21 @@ void reset(void) {
     // reset your game state
 }
 
+static uint16_t input1_prev = 0;
 uint8_t input(void) {
-    uint16_t input1 = keyboard_read();
+    uint16_t input1 = input_get();
+
+    if (input1 == input1_prev) return 0;
+    input1_prev = input1;
 
     player.direction.x = DIRECTION_NONE;
     player.direction.y = DIRECTION_NONE;
-    if(LEFT1) player.direction.x = DIRECTION_LEFT;
-    if(RIGHT1) player.direction.x = DIRECTION_RIGHT;
-    if(UP1) player.direction.y = DIRECTION_UP;
-    if(DOWN1) player.direction.y = DIRECTION_DOWN;
+    if (LEFT1) player.direction.x = DIRECTION_LEFT;
+    if (RIGHT1) player.direction.x = DIRECTION_RIGHT;
+    if (UP1) player.direction.y = DIRECTION_UP;
+    if (DOWN1) player.direction.y = DIRECTION_DOWN;
 
-    if(SELECT1) return ACTION_QUIT;
+    if (SELECT1) return ACTION_QUIT;
 
     return 0;
 }
@@ -175,21 +183,21 @@ void clear_tilemap(uint8_t layer, uint8_t tile, uint8_t x, uint8_t y, uint16_t w
     }
 }
 
-error load_level(uint8_t which) {
-    (void *)which; // unreferenced
-    return 0;
-}
-
 void update(void) {
-    player_move();
+    Edge screen_edge = player_move();
+    if (screen_edge != EdgeNone) {
+        screen_transition(screen_edge, player.point, player_set_xy);
+        sprintf(buffer, "%03d %03d", world_position.x, world_position.y);
+        nprint_string(&vctx, buffer, 7, 0, 0);
+    }
 }
 
 void draw_paused(uint8_t paused) {
-    (void*) paused; // unreferenced
+    (void*)paused;  // unreferenced
 }
 
 void draw_gameover(uint8_t gameover) {
-    (void*) gameover; // unreferenced
+    (void*)gameover;  // unreferenced
 }
 
 void draw(void) {
