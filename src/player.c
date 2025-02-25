@@ -23,7 +23,7 @@ static int8_t frame_dir     = 1;
 error player_init(void)
 {
     player.score   = 900000;
-    player.energy = 20;
+    player.energy = MAX_ENERGY - 10;
     player.lives = 3;
     player.keys = 0;
 

@@ -35,11 +35,6 @@ void hud_init(void)
 
     sprintf(buffer, "ENERGY:");
     nprint_string_layer(&vctx, buffer, 7, LAYER0, 2, HEIGHT - 2);
-
-    // energy bar, max 28 cells
-    for (uint8_t i = 0; i < MAX_ENERGY/ENERGY_DIVIDER; i++) {
-        gfx_tilemap_place(&vctx, 4, LAYER0, 10 + i, 28);
-    }
 }
 
 void hud_score(uint32_t score)
@@ -73,7 +68,7 @@ void hud_energy(uint8_t energy)
         buffer[i] = HUD_DRAINED + partial;
         i++;
     }
-    for(;i<MAX_ENERGY;i++) {
+    for(;i<MAX_ENERGY/ENERGY_DIVIDER;i++) {
         buffer[i] = HUD_DRAINED;
     }
 
