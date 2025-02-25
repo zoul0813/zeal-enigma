@@ -126,10 +126,6 @@ Edge player_move(void)
             return EdgeNone;
     }
 
-    uint8_t roomId = (world_position.y * WORLD_WIDTH) + world_position.x;
-    sprintf(buffer, "%02d", roomId);
-    nprint_string_layer(&vctx, buffer, 2, LAYER0, 0, HEIGHT - 1);
-
     if ((type >= KEYS_INDEX) && (type <= KEYS_INDEX + keys_len)) {
         uint8_t value = type - KEYS_INDEX;
         object_t* key = &keys[value];
@@ -139,9 +135,22 @@ Edge player_move(void)
         player.score += 5000; /// 5,000 for keys
         player.keys  |= (1 << value);
 
+        for(uint8_t i = 0; i < gates_len; i++) {
+            object_t *gate = &gates[i];
+            if(gate->id == value) {
+                gate->flags = OBJECT_INACTIVE;
+            }
+        }
+
         hud_score(player.score);
         hud_keys(player.keys);
     }
+
+    if((type >= GATES_INDEX) && (type <= GATES_INDEX + gates_len)) {
+        return EdgeNone;
+    }
+
+    uint8_t roomId = ROOM_ID();
 
     if (type == FUEL_INDEX) {
         object_t* can;

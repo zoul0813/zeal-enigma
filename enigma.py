@@ -41,6 +41,10 @@ root = None
 meta = None
 
 # starting index of the gate numbers
+OBJECT_INACTIVE = 0x00
+OBJECT_ACTIVE   = 0x01
+OBJECT_VERTICAL = 0x80
+
 FUEL_INDEX = 5
 GATE_INDEX = 80
 GATE_COUNT = 9
@@ -204,7 +208,7 @@ def convert(args):
             for x in range(0, WORLD_HEIGHT):
                 offset = (y * WORLD_WIDTH) + x
                 screen = screens[offset]
-                print("screen", x, y)
+                print("screen", x, y, offset)
                 #  print the header
                 print("       ", end="")
                 for col in range(40):
@@ -222,22 +226,34 @@ def convert(args):
                         value = screen[i + j]
                         color = ""
                         if (value >= GATE_INDEX) and (value <= GATE_INDEX + GATE_COUNT):
-                            """ found a gate """
+                            """found a gate"""
                             found = True
                             color = DATA_COLOR
                             hex[i + j] = f"{value - GATE_INDEX:02X}"
+                            if offset not in gates:
+                                vertical = screen[i + j + 1] != value
+                                flags = OBJECT_ACTIVE
+                                if vertical:
+                                    flags |= OBJECT_VERTICAL
+                                gates[offset] = (
+                                    offset,
+                                    value,
+                                    j,
+                                    i // 40,
+                                    flags,
+                                )
                         elif (value >= KEY_INDEX) and (value <= KEY_INDEX + GATE_COUNT):
-                            """ found a key """
+                            """found a key"""
                             found = True
                             color = ROW_INDEX_COLOR
                             hex[i + j] = f"{value - KEY_INDEX:02X}"
                             # convert to 0 indexed, store room id and screen x,y
-                            keys[value - KEY_INDEX] = (offset, j, i // 40, value)
-                        elif (value == FUEL_INDEX):
+                            keys[value - KEY_INDEX] = (offset, value, j, i // 40, OBJECT_ACTIVE)
+                        elif value == FUEL_INDEX:
                             found = True
                             color = HEADER_COLOR
                             hex[i + j] = f"{value - FUEL_INDEX:02X}"
-                            fuel[offset] = (offset, j, i // 40, value)
+                            fuel[offset] = (offset, value, j, i // 40, OBJECT_ACTIVE)
                         else:
                             if found:
                                 found = False
@@ -260,13 +276,14 @@ def main():
         print("root", root)
         print("meta", meta)
 
-    keys,gates,fuel = convert(args)
+    keys, gates, fuel = convert(args)
 
     print("keys", keys)
+    print("fuel", fuel)
     print("gates", gates)
 
     with open("src/objects.c", "w") as file:
-        file.write("#include \"objects.h\"\n\n\n")
+        file.write('#include "objects.h"\n\n\n')
 
         # object_t keys[] = {
         #     { .room = 0, .x = 1, .y = 2, },
@@ -278,33 +295,46 @@ def main():
             key = keys[i]
             file.write("\t{ ")
             file.write(f".room = {key[0]}, ")
-            file.write(f".x = {key[1]}, ")
-            file.write(f".y = {key[2]}, ")
-            file.write(f".flags = 0x01, ")
+            file.write(f".id = {key[1] - KEY_INDEX}, ")
+            file.write(f".x = {key[2]}, ")
+            file.write(f".y = {key[3]}, ")
+            file.write(f".flags = {key[4]}, ")
             file.write("}, ")
-            file.write(f"// value = {key[3]}")
+            file.write(f"// value = {key[1]}")
             file.write("\n")
         file.write("};\n")
         file.write(f"const uint8_t keys_len = {len(keys)};\n\n")
 
-        # object_t keys[TOTAL_GATES] = {
-        #     { .room = 0, .x = 1, .y = 2, },
-        #     { .room = 2, .x = 1, .y = 2, }
-        # };
-        # const uint8_t keys_len = 9;
+        file.write("object_t gates[] = {\n")
+        for i in sorted(gates):
+            gate = gates[i]
+            file.write("\t{ ")
+            file.write(f".room = {gate[0]}, ")
+            file.write(f".id = {gate[1] - GATE_INDEX}, ")
+            file.write(f".x = {gate[2]}, ")
+            file.write(f".y = {gate[3]}, ")
+            file.write(f".flags = {gate[4]}, ")
+            file.write("}, ")
+            file.write(f"// value = {gate[1]}")
+            file.write("\n")
+        file.write("};\n")
+        file.write(f"const uint8_t gates_len = {len(gates)};\n\n")
+
         file.write("object_t fuel[] = {\n")
         for i in sorted(fuel):
             can = fuel[i]
             file.write("\t{ ")
             file.write(f".room = {can[0]}, ")
-            file.write(f".x = {can[1]}, ")
-            file.write(f".y = {can[2]}, ")
-            file.write(f".flags = 0x01, ")
+            file.write(f".id = {can[1]}, ")
+            file.write(f".x = {can[2]}, ")
+            file.write(f".y = {can[3]}, ")
+            file.write(f".flags = {can[4]}, ")
             file.write("}, ")
-            file.write(f"// value = {can[3]}")
+            file.write(f"// value = {can[1]}")
             file.write("\n")
         file.write("};\n")
         file.write(f"const uint8_t fuel_len = {len(fuel)};\n\n")
+
 
 if __name__ == "__main__":
     main()

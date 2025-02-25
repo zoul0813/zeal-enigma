@@ -38,6 +38,8 @@
 #define WORLD_PLAYER_X ((WIDTH / 4) * 16)
 #define WORLD_PLAYER_Y (((HEIGHT / 4) * 2) * 16)
 
+#define ROOM_ID() ((world_position.y * WORLD_WIDTH) + world_position.x)
+
 typedef void (*transition_callback_t)(uint16_t x, uint16_t y);
 
 extern Vector2_u8 world_position;

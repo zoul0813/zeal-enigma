@@ -121,7 +121,7 @@ void init(void) {
     handle_error(err, "initialize world", 1);
 
 #if DEBUG
-    sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, (world_position.y * WORLD_WIDTH) + world_position.x);
+    sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, ROOM_ID());
     nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
 #endif
 
@@ -193,7 +193,7 @@ void update(void) {
         screen_transition(screen_edge, player.point, player_set_xy);
 
 #if DEBUG
-        sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, (world_position.y * WORLD_WIDTH) + world_position.x);
+        sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, ROOM_ID());
         nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
 #endif
     }
