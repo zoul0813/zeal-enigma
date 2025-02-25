@@ -4,8 +4,8 @@
 #define HUD_H
 
 #define HUD_LIFE    156
-#define HUD_ENERGY  6
-#define HUD_DRAINED 7
+#define HUD_ENERGY  10
+#define HUD_DRAINED 6
 
 void hud_init(void);
 void hud_score(uint32_t score);

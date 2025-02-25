@@ -10,7 +10,7 @@ zar_file_t zar_file;
 zar_file_entry_t entry;
 uint8_t data[MAX_DATA_KB * 1024];
 
-uint16_t palette[16];
+uint16_t palette[PALETTE_SIZE];
 
 zos_err_t load_asset_file(const char *path) {
     zos_err_t err = zar_file_open(path, &zar_file);

@@ -155,6 +155,11 @@ Edge player_move(void)
     return EdgeNone;
 }
 
+void player_shoot(void) {
+    player.energy--;
+    hud_energy(player.energy);
+}
+
 void player_set_xy(uint16_t x, uint16_t y)
 {
     player.point.x        = x;

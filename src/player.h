@@ -9,9 +9,10 @@
 
 #define PLAYER_SPEED (3U)
 
-#define MAX_ENERGY  (28U)
-#define MAX_LIVES   (3U)
-#define MAX_SCORE   (99999999U)
+#define ENERGY_DIVIDER (4U)
+#define MAX_ENERGY     (28U * ENERGY_DIVIDER)
+#define MAX_LIVES      (3U)
+#define MAX_SCORE      (99999999U)
 
 typedef struct {
         union {
@@ -39,6 +40,7 @@ extern player_t player;
 error player_init(void);
 error player_deinit(void);
 Edge player_move(void);
+void player_shoot(void);
 void player_set_xy(uint16_t x, uint16_t y);
 
 #endif

@@ -18,7 +18,7 @@ void room_set_palette(void) {
     uint8_t palette_offset = ((world_position.x * world_position.y) % 9) + 4;
     uint16_t new_palette[2];
     new_palette[0] = palette[palette_offset];
-    new_palette[1] = palette[(palette_offset + 1) % 16];
+    new_palette[1] = palette[(palette_offset + 1) % PALETTE_SIZE];
     if(new_palette[1] < 4) new_palette[1] += 4;
 
     gfx_palette_load(&vctx, &new_palette, sizeof(new_palette), 1);

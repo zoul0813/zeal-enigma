@@ -4,10 +4,11 @@
 
 #define MAX_SPRITES   16
 #define MAX_DATA_KB   6
+#define PALETTE_SIZE  16
 
 extern gfx_sprite SPRITE_ARENA[MAX_SPRITES];
 extern uint8_t data[MAX_DATA_KB * 1024];
-extern uint16_t palette[16];
+extern uint16_t palette[PALETTE_SIZE];
 extern zar_file_t zar_file;
 extern zar_file_entry_t entry;
 

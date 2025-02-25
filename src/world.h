@@ -31,7 +31,7 @@
 #define WORLD_GRID 2
 
 // starting room
-#define WORLD_START_X  2
+#define WORLD_START_X  3
 #define WORLD_START_Y  3
 
 // starting position of player on screen

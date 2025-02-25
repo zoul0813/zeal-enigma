@@ -37,7 +37,7 @@ void hud_init(void)
     nprint_string_layer(&vctx, buffer, 7, LAYER0, 2, HEIGHT - 2);
 
     // energy bar, max 28 cells
-    for (uint8_t i = 0; i < 28; i++) {
+    for (uint8_t i = 0; i < MAX_ENERGY/ENERGY_DIVIDER; i++) {
         gfx_tilemap_place(&vctx, 4, LAYER0, 10 + i, 28);
     }
 }
@@ -54,20 +54,30 @@ void hud_score(uint32_t score)
 
 void hud_lives(uint8_t lives)
 {
-    char tiles[MAX_LIVES] = {0};
     for (uint8_t i = 0; i < lives; i++) {
-        tiles[i] = HUD_LIFE;
+        buffer[i] = HUD_LIFE;
     }
-    gfx_tilemap_load(&vctx, tiles, MAX_LIVES, LAYER0, 9, 26);
+    gfx_tilemap_load(&vctx, buffer, MAX_LIVES, LAYER0, 9, 26);
 }
 
 void hud_energy(uint8_t energy)
 {
-    char tiles[MAX_ENERGY] = {4}; // tile for full energy
-    for(uint8_t i = 0; i < MAX_ENERGY; i++) {
-        tiles[i] = energy > i ? HUD_ENERGY : HUD_DRAINED;
+    uint8_t full = energy / ENERGY_DIVIDER;     // 90 / 4 = 22.5
+    uint8_t partial = energy % ENERGY_DIVIDER;  // 90 % 4 = 2
+
+    uint8_t i;
+    for(i = 0; i < full; i++) {
+        buffer[i] = HUD_ENERGY;
     }
-    gfx_tilemap_load(&vctx, tiles, MAX_ENERGY, LAYER0, 10, 28);
+    if(partial > 0) {
+        buffer[i] = HUD_DRAINED + partial;
+        i++;
+    }
+    for(;i<MAX_ENERGY;i++) {
+        buffer[i] = HUD_DRAINED;
+    }
+
+    gfx_tilemap_load(&vctx, buffer, MAX_ENERGY/ENERGY_DIVIDER, LAYER0, 10, 28);
 }
 
 void hud_keys(uint16_t keys)

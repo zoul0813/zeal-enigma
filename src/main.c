@@ -169,6 +169,8 @@ uint8_t input(void) {
     if (UP1) player.direction.y = DIRECTION_UP;
     if (DOWN1) player.direction.y = DIRECTION_DOWN;
 
+    if(BUTTON1_B) player_shoot();
+
     if (SELECT1) return ACTION_QUIT;
 
     return 0;
@@ -189,6 +191,7 @@ void update(void) {
     Edge screen_edge = player_move();
     if (screen_edge != EdgeNone) {
         screen_transition(screen_edge, player.point, player_set_xy);
+
 #if DEBUG
         sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, (world_position.y * WORLD_WIDTH) + world_position.x);
         nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
