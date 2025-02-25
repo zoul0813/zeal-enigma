@@ -28,6 +28,11 @@
 #define START1    (input1 & BUTTON_START)
 #define SELECT1   (input1 & BUTTON_SELECT)
 
+#define BLACK_DEFAULT (0)
+#define RED_YELLOW    (1 << 4)
+#define RED_WHITE     (2 << 4)
+#define RED_GREY      (3 << 4)
+
 typedef uint8_t error;
 
 extern uint8_t buffer[WIDTH];

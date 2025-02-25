@@ -8,6 +8,7 @@
 #include "main.h"
 #include "world.h"
 #include "gates.h"
+#include "hud.h"
 
 #define PLAYER_TILE 16
 
@@ -123,11 +124,17 @@ Edge player_move(void)
 
     if ((type >= KEYS_INDEX) && (type <= KEYS_INDEX + keys_len)) {
         uint8_t roomId = (ty * WORLD_WIDTH) + tx;
-        object_t *key = &keys[type - KEYS_INDEX];
+        uint8_t value = type - KEYS_INDEX;
+        object_t *key = &keys[value];
         key->flags = OBJECT_INACTIVE;
         room_set_tile(key->x, key->y, WORLD_NONE); // make it a ground tile
 
+        player.score += 5000; /// 5,000 for keys
+        player.keys |= (1 << value);
+
         // TODO: update HUD to reflect key picked up
+        hud_score(player.score);
+        hud_keys(player.keys);
     }
 
 

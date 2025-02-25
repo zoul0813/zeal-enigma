@@ -9,6 +9,10 @@
 
 #define PLAYER_SPEED (3U)
 
+#define MAX_ENERGY  (28U)
+#define MAX_LIVES   (3U)
+#define MAX_SCORE   (99999999U)
+
 typedef struct {
         union {
                 Rect rect;
@@ -20,7 +24,10 @@ typedef struct {
 
         Direction direction;
 
-        uint16_t score;
+        uint8_t lives;
+        uint8_t energy;
+        uint16_t keys; // bitmask of 9 keys
+        uint32_t score;
 
         // sprites
         gfx_sprite* sprite_head;

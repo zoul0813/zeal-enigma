@@ -7,7 +7,9 @@
 #include <zgdk.h>
 
 #include "main.h"
+#include "hud.h"
 #include "assets.h"
+#include "gates.h"
 #include "world.h"
 #include "player.h"
 
@@ -111,37 +113,20 @@ void init(void) {
     handle_error(err, "init player", 1);
 
     // TODO: set red background for Banner/HUD
-    // clear_tilemap(LAYER1, 1 << 4, 0, 0, WIDTH, 4);
-    // clear_tilemap(LAYER1, 1 << 4, 0, HEIGHT-5, WIDTH, 5);
+    clear_tilemap(LAYER1, RED_GREY, 0, 0, WIDTH, 4);
+    clear_tilemap(LAYER1, RED_YELLOW, 0, HEIGHT-5, WIDTH, 5);
     // clear_tilemap(LAYER1, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
 
     err = world_init(&vctx);
     handle_error(err, "initialize world", 1);
 
+#if DEBUG
     sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, (world_position.y * WORLD_WIDTH) + world_position.x);
     nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
+#endif
 
 #if !defined(DEBUG) || DEBUG == 0
-    sprintf(buffer, "1985 Enigma by CBM UK Ltd");
-    nprint_string_layer(&vctx, buffer, 25, LAYER0, 2, 0);
-
-    sprintf(buffer, "2025 Port for Zeal 8-bit Computer");
-    nprint_string_layer(&vctx, buffer, 33, LAYER0, 2, 1);
-
-    sprintf(buffer, "Code: zoul0813 Graphics: Arcadia");
-    nprint_string_layer(&vctx, buffer, 32, LAYER0, 2, 2);
-
-    sprintf(buffer, "Arrows: Move  Space: Shoot");
-    nprint_string_layer(&vctx, buffer, 26, LAYER0, 2, 3);
-
-    // TODO: make this a HUD update function
-    sprintf(buffer, "LIVES: ***   KEYS:");
-    nprint_string_layer(&vctx, buffer, 18, LAYER0, 2, HEIGHT-4);
-
-    sprintf(buffer, "SCORE: %05d      HI-SCORE: %05d", 0, 0);
-    nprint_string_layer(&vctx, buffer, 33, LAYER0, 2, HEIGHT-3);
-    sprintf(buffer, "ENERGY:");
-    nprint_string_layer(&vctx, buffer, 7, LAYER0, 2, HEIGHT-2);
+    hud_init();
 #endif
 
     gfx_enable_screen(1);
@@ -200,8 +185,10 @@ void update(void) {
     Edge screen_edge = player_move();
     if (screen_edge != EdgeNone) {
         screen_transition(screen_edge, player.point, player_set_xy);
+#if DEBUG
         sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, (world_position.y * WORLD_WIDTH) + world_position.x);
         nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
+#endif
     }
 }
 

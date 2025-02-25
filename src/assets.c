@@ -22,11 +22,16 @@ zos_err_t load_palette(gfx_context* ctx, const char *path, uint8_t from) {
     if(err != ERR_SUCCESS) return err | 0xC0;
 
     uint16_t size = entry.size;
-    err = zar_file_read(&zar_file, &entry, (uint8_t*)&palette, &size);
+    err = zar_file_read(&zar_file, &entry, data, &size);
     if(err != ERR_SUCCESS) return err | 0xC0;
 
-    err = gfx_palette_load(ctx, &palette, size, from);
+    err = gfx_palette_load(ctx, data, size, from);
     if(err != ERR_SUCCESS) return err | 0x80;
+
+    uint8_t *copy_palette = (uint8_t*)&palette;
+    for(uint8_t i = 0; i < 32; i++) {
+        copy_palette[i] = data[i];
+    }
 
     return err;
 }
