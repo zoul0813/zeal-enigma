@@ -13,8 +13,8 @@ void hud_init(void)
     sprintf(buffer, "2025 Port for Zeal 8-bit Computer");
     nprint_string_layer(&vctx, buffer, 33, LAYER0, 2, 1);
 
-    sprintf(buffer, "Code: zoul0813 Graphics: Arcadia");
-    nprint_string_layer(&vctx, buffer, 32, LAYER0, 2, 2);
+    sprintf(buffer, "Code: zoul0813 Graphics: arcadia6502");
+    nprint_string_layer(&vctx, buffer, 36, LAYER0, 2, 2);
 
     sprintf(buffer, "Arrows: Move  Space: Shoot");
     nprint_string_layer(&vctx, buffer, 26, LAYER0, 2, 3);
