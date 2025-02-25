@@ -7,6 +7,7 @@
 #include "player.h"
 #include "main.h"
 #include "world.h"
+#include "gates.h"
 
 #define PLAYER_TILE 16
 
@@ -44,7 +45,7 @@ error player_deinit(void)
 Edge player_move(void)
 {
     if (frame > 7) {
-        frame = 0;
+        frame         = 0;
         frame_offset += frame_dir;
         if (frame_offset == 0 || frame_offset == 2) {
             frame_dir *= -1;
@@ -118,14 +119,16 @@ Edge player_move(void)
             // TODO: only block movement on the direction that has the block
             // obstruction
             return EdgeNone;
-            // case TILE_CHEST:
-            //     player.score++;
-            //     world_set_tile(tx, ty, 0); // make it a ground tile
+    }
 
-            //     // player score
-            //     sprintf(buffer, "%03d", player.score);
-            //     nprint_string(&vctx, buffer, 3, WIDTH-3, HEIGHT-1);
-            //     break;
+    if ((type >= KEYS_INDEX) && (type <= KEYS_INDEX + keys_len)) {
+        uint8_t roomId = (ty * WORLD_WIDTH) + tx;
+        object_t *key = &keys[type - KEYS_INDEX];
+        key->flags = OBJECT_INACTIVE;
+        world_set_tile(key->x, key->y, WORLD_NONE); // make it a ground tile
+        // player score
+        sprintf(buffer, "%03d", key->room);
+        nprint_string(&vctx, buffer, 3, WIDTH - 3, HEIGHT - 1);
     }
 
 

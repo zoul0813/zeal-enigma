@@ -26,8 +26,12 @@
 // offset for where the map starts in the zar
 #define TILEMAP_OFFSET 0
 
+#define WORLD_NONE 0
+#define WORLD_WALL 1
+#define WORLD_GRID 2
+
 // starting room
-#define WORLD_START_X  3
+#define WORLD_START_X  2
 #define WORLD_START_Y  3
 
 // starting position of player on screen
@@ -39,8 +43,10 @@ typedef void (*transition_callback_t)(uint16_t x, uint16_t y);
 extern Vector2_u8 world_position;
 
 typedef enum {
-    TILE_OPEN    = 0,   // player can move on this
+    TILE_NONE    = 0,   // player can move on this
     TILE_WALL    = 1,   // wall, or other obstruction
+    TILE_KEY     = 2,
+    TILE_GATE    = 3,
     TILE_UNKNOWN = 255, // unknown, assume an obstruction
 } TileType;
 

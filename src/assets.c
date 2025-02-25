@@ -64,7 +64,7 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
     for (uint8_t row = 0; row < ROOM_HEIGHT; row++) {
         for (uint8_t col = 0; col < ROOM_WIDTH; col++) {
             uint8_t tile = data[(row * ROOM_WIDTH) + col];
-            TileType type = TILE_OPEN;
+            TileType type = TILE_NONE;
 
             if ((tile == 1)) {
                 type = TILE_WALL;

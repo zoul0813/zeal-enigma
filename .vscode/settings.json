@@ -20,6 +20,11 @@
   "editor.insertSpaces": true,
   "editor.detectIndentation": false,
   "files.associations": {
-    "*.asm": "z80-macroasm"
-  }
+    "*.asm": "z80-macroasm",
+    "array": "c",
+    "span": "c",
+    "string": "c",
+    "string_view": "c",
+    "vector": "c"
+}
 }

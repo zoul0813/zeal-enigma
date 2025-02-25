@@ -13,6 +13,28 @@
 Vector2_u8 world_position;
 TileType SCREEN[ROOM_HEIGHT][ROOM_WIDTH];
 
+void room_set_palette(void) {
+    // palette swap
+    uint8_t palette_offset = ((world_position.x * world_position.y) % 9) + 4;
+    uint16_t new_palette[2] = {
+        palette[palette_offset],
+        palette[(palette_offset + 3) % 16],
+    };
+
+    gfx_palette_load(&vctx, &new_palette, sizeof(new_palette), 1);
+}
+
+void room_render_keys(void) {
+    uint8_t roomId = (world_position.y * WORLD_WIDTH) + world_position.x;
+    for(uint8_t i = 0; i < keys_len; i++) {
+        object_t *key = &keys[i];
+        if(key->room != roomId) continue;
+        if(key->flags != OBJECT_ACTIVE) continue;
+        gfx_tilemap_place(&vctx, KEYS_INDEX + i, LAYER0, key->x + ROOM_OFFSET_X, key->y + ROOM_OFFSET_Y);
+        SCREEN[key->y][key->x] = KEYS_INDEX + i;
+    }
+}
+
 /** WORLD FUNCTIONS */
 
 error world_init(gfx_context* ctx)
@@ -20,7 +42,9 @@ error world_init(gfx_context* ctx)
     // load the screen the player starts on
     world_position.x = WORLD_START_X;
     world_position.y = WORLD_START_Y;
+    room_set_palette();
     zos_err_t err    = load_tilemap(ctx, world_position.x, world_position.y, 0, 0);
+    room_render_keys();
     if (err != ERR_SUCCESS)
         return err;
     tilemap_scroll_x(0, 0);
@@ -30,14 +54,14 @@ error world_init(gfx_context* ctx)
 void world_set_tile(uint8_t x, uint8_t y, uint8_t tile)
 {
     // out of bounds, ignore
-    if (x >= WIDTH)
+    if (x >= WORLD_WIDTH)
         return;
-    if (y >= HEIGHT)
+    if (y >= WORLD_HEIGHT)
         return;
 
     // place tile on screen
-    gfx_tilemap_place(&vctx, tile, 0, x + WIDTH, y);
-    SCREEN[y][x] = TILE_OPEN;
+    gfx_tilemap_place(&vctx, tile, LAYER0, ROOM_OFFSET_X + x, ROOM_OFFSET_Y + y);
+    SCREEN[y][x] = TILE_NONE;
 
     // place tile into world
     data[(y * WIDTH) + x] = tile;
@@ -47,26 +71,18 @@ void world_set_tile(uint8_t x, uint8_t y, uint8_t tile)
 
 void screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback)
 {
-    // palette swap
-    uint8_t palette_offset = ((world.x * world.y) % 9) + 4;
-    uint16_t new_palette[2] = {
-        palette[palette_offset],
-        palette[(palette_offset + 3) % 16],
-    };
+    // update to the latest
+    world_position.x = world.x;
+    world_position.y = world.y;
+
+    room_set_palette();
 
     // load the current screen into 0,0 and jump to it
     gfx_wait_vblank(&vctx);
-    gfx_palette_load(&vctx, &new_palette, sizeof(new_palette), 1);
     load_tilemap(&vctx, world.x, world.y, 0, 0);
     gfx_wait_end_vblank(&vctx);
 
-    uint8_t roomId = (world.y * WORLD_WIDTH) + world.x;
-    for(uint8_t i = 0; i < keys_len; i++) {
-        object_t *key = &keys[i];
-        if(key->room != roomId) continue;
-        if(key->flags != OBJECT_ACTIVE) continue;
-        gfx_tilemap_place(&vctx, KEYS_INDEX + i, LAYER0, key->x + ROOM_OFFSET_X, key->y + ROOM_OFFSET_Y);
-    }
+    room_render_keys();
 
     gfx_wait_vblank(&vctx);
     switch (edge) {
@@ -76,19 +92,15 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
         case EdgeBottom: callback(point.x, ROOM_TOP_PX + SPRITE_HEIGHT); break;
     }
     gfx_wait_end_vblank(&vctx);
-
-    // update to the latest
-    world_position.x = world.x;
-    world_position.y = world.y;
 }
 
 TileType screen_get_tile(const uint8_t x, const uint8_t y)
 {
-    // out of bounds, assume TILE_OPEN
+    // out of bounds, assume TILE_NONE
     if (x >= WIDTH)
-        return TILE_OPEN;
+        return TILE_NONE;
     if (y >= HEIGHT)
-        return TILE_OPEN;
+        return TILE_NONE;
     return SCREEN[y][x];
 }
 
