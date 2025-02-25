@@ -125,10 +125,9 @@ Edge player_move(void)
         uint8_t roomId = (ty * WORLD_WIDTH) + tx;
         object_t *key = &keys[type - KEYS_INDEX];
         key->flags = OBJECT_INACTIVE;
-        world_set_tile(key->x, key->y, WORLD_NONE); // make it a ground tile
-        // player score
-        sprintf(buffer, "%03d", key->room);
-        nprint_string(&vctx, buffer, 3, WIDTH - 3, HEIGHT - 1);
+        room_set_tile(key->x, key->y, WORLD_NONE); // make it a ground tile
+
+        // TODO: update HUD to reflect key picked up
     }
 
 

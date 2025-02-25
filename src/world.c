@@ -35,6 +35,22 @@ void room_render_keys(void) {
     }
 }
 
+void room_set_tile(uint8_t x, uint8_t y, uint8_t tile)
+{
+    // out of bounds, ignore
+    if (x >= ROOM_WIDTH)
+        return;
+    if (y >= ROOM_HEIGHT)
+        return;
+
+    // place tile on screen
+    gfx_tilemap_place(&vctx, tile, LAYER0, ROOM_OFFSET_X + x, ROOM_OFFSET_Y + y);
+    SCREEN[y][x] = TILE_NONE;
+
+    // place tile into world
+    data[(y * WIDTH) + x] = tile;
+}
+
 /** WORLD FUNCTIONS */
 
 error world_init(gfx_context* ctx)
@@ -51,21 +67,6 @@ error world_init(gfx_context* ctx)
     return ERR_SUCCESS;
 }
 
-void world_set_tile(uint8_t x, uint8_t y, uint8_t tile)
-{
-    // out of bounds, ignore
-    if (x >= WORLD_WIDTH)
-        return;
-    if (y >= WORLD_HEIGHT)
-        return;
-
-    // place tile on screen
-    gfx_tilemap_place(&vctx, tile, LAYER0, ROOM_OFFSET_X + x, ROOM_OFFSET_Y + y);
-    SCREEN[y][x] = TILE_NONE;
-
-    // place tile into world
-    data[(y * WIDTH) + x] = tile;
-}
 
 /** SCREEN FUNCTIONS */
 
