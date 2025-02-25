@@ -7,7 +7,7 @@
 #include "player.h"
 #include "main.h"
 #include "world.h"
-#include "gates.h"
+#include "objects.h"
 #include "hud.h"
 
 #define PLAYER_TILE 16
@@ -22,10 +22,10 @@ static int8_t frame_dir     = 1;
 
 error player_init(void)
 {
-    player.score   = 900000;
+    player.score  = 900000;
     player.energy = MAX_ENERGY - 10;
-    player.lives = 3;
-    player.keys = 0;
+    player.lives  = 3;
+    player.keys   = 0;
 
     player.point.x = WORLD_PLAYER_X;
     player.point.y = WORLD_PLAYER_Y;
@@ -126,19 +126,39 @@ Edge player_move(void)
             return EdgeNone;
     }
 
+    uint8_t roomId = (world_position.y * WORLD_WIDTH) + world_position.x;
+    sprintf(buffer, "%02d", roomId);
+    nprint_string_layer(&vctx, buffer, 2, LAYER0, 0, HEIGHT - 1);
+
     if ((type >= KEYS_INDEX) && (type <= KEYS_INDEX + keys_len)) {
-        uint8_t roomId = (ty * WORLD_WIDTH) + tx;
         uint8_t value = type - KEYS_INDEX;
-        object_t *key = &keys[value];
-        key->flags = OBJECT_INACTIVE;
+        object_t* key = &keys[value];
+        key->flags    = OBJECT_INACTIVE;
         room_set_tile(key->x, key->y, WORLD_NONE); // make it a ground tile
 
         player.score += 5000; /// 5,000 for keys
-        player.keys |= (1 << value);
+        player.keys  |= (1 << value);
 
-        // TODO: update HUD to reflect key picked up
         hud_score(player.score);
         hud_keys(player.keys);
+    }
+
+    if (type == FUEL_INDEX) {
+        object_t* can;
+        for (uint8_t i = 0; i < fuel_len; i++) {
+            can = &fuel[i];
+            if (can->room == roomId) {
+                can->flags = OBJECT_INACTIVE;
+                room_set_tile(can->x, can->y, WORLD_NONE); // make it a ground tile
+
+                player.energy += FUEL_VALUE;
+                if (player.energy > MAX_ENERGY)
+                    player.energy = MAX_ENERGY;
+
+                hud_energy(player.energy);
+                break;
+            }
+        }
     }
 
 
@@ -155,7 +175,8 @@ Edge player_move(void)
     return EdgeNone;
 }
 
-void player_shoot(void) {
+void player_shoot(void)
+{
     player.energy--;
     hud_energy(player.energy);
 }

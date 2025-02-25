@@ -6,6 +6,8 @@
 #define TOTAL_GATES 9
 #define GATES_INDEX 80
 #define KEYS_INDEX  96
+#define FUEL_INDEX  5
+#define FUEL_VALUE  10
 
 typedef enum {
     OBJECT_INACTIVE = 0,
@@ -23,6 +25,8 @@ extern object_t gates[];
 extern const uint8_t gates_len;
 extern object_t keys[];
 extern const uint8_t keys_len;
+extern object_t fuel[];
+extern const uint8_t fuel_len;
 
 
 #endif

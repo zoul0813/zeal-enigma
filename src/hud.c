@@ -2,7 +2,7 @@
 #include <zgdk.h>
 #include "hud.h"
 #include "main.h"
-#include "gates.h"
+#include "objects.h"
 #include "player.h"
 
 void hud_init(void)

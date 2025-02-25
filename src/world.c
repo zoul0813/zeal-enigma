@@ -2,7 +2,7 @@
 
 #include "assets.h"
 #include "main.h"
-#include "gates.h"
+#include "objects.h"
 
 /**
  * It is assumed the viewport is always the screen 0,1 on the tilemap
@@ -35,6 +35,17 @@ void room_render_keys(void) {
     }
 }
 
+void room_render_fuel(void) {
+    uint8_t roomId = (world_position.y * WORLD_WIDTH) + world_position.x;
+    for(uint8_t i = 0; i < fuel_len; i++) {
+        object_t *can = &fuel[i];
+        if(can->room != roomId) continue;
+        if(can->flags != OBJECT_ACTIVE) continue;
+        gfx_tilemap_place(&vctx, FUEL_INDEX, LAYER0, can->x + ROOM_OFFSET_X, can->y + ROOM_OFFSET_Y);
+        SCREEN[can->y][can->x] = FUEL_INDEX;
+    }
+}
+
 void room_set_tile(uint8_t x, uint8_t y, uint8_t tile)
 {
     // out of bounds, ignore
@@ -61,6 +72,7 @@ error world_init(gfx_context* ctx)
     room_set_palette();
     zos_err_t err    = load_tilemap(ctx, world_position.x, world_position.y, 0, 0);
     room_render_keys();
+    room_render_fuel();
     if (err != ERR_SUCCESS)
         return err;
     tilemap_scroll_x(0, 0);

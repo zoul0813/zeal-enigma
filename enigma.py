@@ -41,6 +41,7 @@ root = None
 meta = None
 
 # starting index of the gate numbers
+FUEL_INDEX = 5
 GATE_INDEX = 80
 GATE_COUNT = 9
 KEY_INDEX = 96
@@ -192,11 +193,11 @@ def get_screens(args, layer):
 
 
 def convert(args):
-    maps = []
     keys = {}
     gates = {}
+    fuel = {}
 
-    layers = get_layers("gates")
+    layers = get_layers("objects")
     for layer in layers:
         screens = get_screens(args, layer)
         for y in range(0, WORLD_WIDTH):
@@ -232,7 +233,11 @@ def convert(args):
                             hex[i + j] = f"{value - KEY_INDEX:02X}"
                             # convert to 0 indexed, store room id and screen x,y
                             keys[value - KEY_INDEX] = (offset, j, i // 40, value)
-
+                        elif (value == FUEL_INDEX):
+                            found = True
+                            color = HEADER_COLOR
+                            hex[i + j] = f"{value - FUEL_INDEX:02X}"
+                            fuel[offset] = (offset, j, i // 40, value)
                         else:
                             if found:
                                 found = False
@@ -240,7 +245,7 @@ def convert(args):
                         print(f"{color}{hex[i+j]} ", end="")
                     print("")
 
-    return (keys, gates)
+    return (keys, gates, fuel)
 
 
 def main():
@@ -255,22 +260,22 @@ def main():
         print("root", root)
         print("meta", meta)
 
-    keys,gates = convert(args)
+    keys,gates,fuel = convert(args)
 
     print("keys", keys)
     print("gates", gates)
 
-    with open("src/gates.c", "w") as file:
-        file.write("#include \"gates.h\"\n\n\n")
+    with open("src/objects.c", "w") as file:
+        file.write("#include \"objects.h\"\n\n\n")
 
-        # object_t keys[TOTAL_GATES] = {
+        # object_t keys[] = {
         #     { .room = 0, .x = 1, .y = 2, },
         #     { .room = 2, .x = 1, .y = 2, }
         # };
         # const uint8_t keys_len = 9;
-        file.write("object_t keys[TOTAL_GATES] = {\n")
-        for keyId in sorted(keys):
-            key = keys[keyId]
+        file.write("object_t keys[] = {\n")
+        for i in sorted(keys):
+            key = keys[i]
             file.write("\t{ ")
             file.write(f".room = {key[0]}, ")
             file.write(f".x = {key[1]}, ")
@@ -282,35 +287,24 @@ def main():
         file.write("};\n")
         file.write(f"const uint8_t keys_len = {len(keys)};\n\n")
 
-    # if not maps or len(maps) < 1:
-    #     print("Failed to convert")
-    #     return
-
-    outputDir, outputFilename, outputPath = process_paths(args.input, args.output)
-    if args.debug:
-        print("outputDir", outputDir)
-        print("outputFilename", outputFilename)
-        print("outputPath", outputPath)
-
-    create_dir(outputDir)
-
-
-#   for idx, tilemap in enumerate(maps):
-#     if outputPath:
-#       p = Path(outputPath)
-#       index = ""
-#       if len(maps) > 1:
-#         index = f"{str(idx).zfill(4)}"
-#       tilemapFileName = p.parent / f"{p.stem}{index}{p.suffix}"
-
-#     if tilemapFileName == None:
-#       tilemapFileName = Path(args.input + str(idx).zfill(4)).with_suffix(".ztm")
-
-#     if args.verbose:
-#       print("tilemap", tilemapFileName, f"{len(tilemap)}B")
-#     with open(tilemapFileName, "wb") as file:
-#       file.write(tilemap)
-
+        # object_t keys[TOTAL_GATES] = {
+        #     { .room = 0, .x = 1, .y = 2, },
+        #     { .room = 2, .x = 1, .y = 2, }
+        # };
+        # const uint8_t keys_len = 9;
+        file.write("object_t fuel[] = {\n")
+        for i in sorted(fuel):
+            can = fuel[i]
+            file.write("\t{ ")
+            file.write(f".room = {can[0]}, ")
+            file.write(f".x = {can[1]}, ")
+            file.write(f".y = {can[2]}, ")
+            file.write(f".flags = 0x01, ")
+            file.write("}, ")
+            file.write(f"// value = {can[3]}")
+            file.write("\n")
+        file.write("};\n")
+        file.write(f"const uint8_t fuel_len = {len(fuel)};\n\n")
 
 if __name__ == "__main__":
     main()

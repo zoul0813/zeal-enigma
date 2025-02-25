@@ -9,7 +9,7 @@
 #include "main.h"
 #include "hud.h"
 #include "assets.h"
-#include "gates.h"
+#include "objects.h"
 #include "world.h"
 #include "player.h"
 
