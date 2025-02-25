@@ -22,7 +22,11 @@ static int8_t frame_dir     = 1;
 
 error player_init(void)
 {
-    player.score   = 0;
+    player.score   = 900000;
+    player.energy = 20;
+    player.lives = 3;
+    player.keys = 0;
+
     player.point.x = WORLD_PLAYER_X;
     player.point.y = WORLD_PLAYER_Y;
 

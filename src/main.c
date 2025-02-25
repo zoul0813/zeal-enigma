@@ -127,6 +127,10 @@ void init(void) {
 
 #if !defined(DEBUG) || DEBUG == 0
     hud_init();
+    hud_score(player.score);
+    hud_lives(player.lives);
+    hud_keys(player.keys);
+    hud_energy(player.energy);
 #endif
 
     gfx_enable_screen(1);

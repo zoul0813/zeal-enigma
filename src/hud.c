@@ -20,7 +20,7 @@ void hud_init(void)
     nprint_string_layer(&vctx, buffer, 26, LAYER0, 2, 3);
 
     // TODO: make this a HUD update function
-    sprintf(buffer, "LIVES: ***   KEYS:");
+    sprintf(buffer, "LIVES:       KEYS:");
     nprint_string_layer(&vctx, buffer, 18, LAYER0, 2, HEIGHT - 4);
     clear_tilemap(LAYER1, RED_WHITE, 9, 26, 3, 1);
     clear_tilemap(LAYER1, RED_GREY, 21, 26, 17, 1);
@@ -28,8 +28,8 @@ void hud_init(void)
         gfx_tilemap_place(&vctx, KEYS_INDEX + i, LAYER0, 21 + (i * 2), 26);
     }
 
-    sprintf(buffer, "SCORE: %08d   HI-SCORE: %08d", 0, 0);
-    nprint_string_layer(&vctx, buffer, 36, LAYER0, 2, HEIGHT - 3);
+    sprintf(buffer, "SCORE:            HI-SCORE:");
+    nprint_string_layer(&vctx, buffer, 27, LAYER0, 2, HEIGHT - 3);
     clear_tilemap(LAYER1, RED_WHITE, 9, 27, 8, 1);
     clear_tilemap(LAYER1, RED_WHITE, 30, 27, 8, 1);
 
@@ -44,11 +44,11 @@ void hud_init(void)
 
 void hud_score(uint32_t score)
 {
-    sprintf(buffer, "%08d", score);
+    sprintf(buffer, "%08lu", score);
     nprint_string_layer(&vctx, buffer, 8, LAYER0, 9, 27);
 
     // update hi-score?
-    sprintf(buffer, "%08d", score);
+    sprintf(buffer, "%08lu", score);
     nprint_string_layer(&vctx, buffer, 8, LAYER0, 30, 27);
 }
 
@@ -56,17 +56,16 @@ void hud_lives(uint8_t lives)
 {
     char tiles[MAX_LIVES] = {0};
     for (uint8_t i = 0; i < lives; i++) {
-        tiles[i] = '*';
+        tiles[i] = HUD_LIFE;
     }
-    sprintf(buffer, "%s", lives);
-    nprint_string_layer(&vctx, buffer, MAX_LIVES, LAYER0, 9, 26);
+    gfx_tilemap_load(&vctx, tiles, MAX_LIVES, LAYER0, 9, 26);
 }
 
 void hud_energy(uint8_t energy)
 {
     char tiles[MAX_ENERGY] = {4}; // tile for full energy
-    for(uint8_t i = MAX_ENERGY; i > energy; i--) {
-        tiles[i] = 3;
+    for(uint8_t i = 0; i < MAX_ENERGY; i++) {
+        tiles[i] = energy > i ? HUD_ENERGY : HUD_DRAINED;
     }
     gfx_tilemap_load(&vctx, tiles, MAX_ENERGY, LAYER0, 10, 28);
 }
