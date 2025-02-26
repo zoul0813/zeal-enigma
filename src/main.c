@@ -12,18 +12,21 @@
 #include "objects.h"
 #include "world.h"
 #include "player.h"
+#include "bullet.h"
 
 gfx_context vctx;
 uint8_t buffer[WIDTH];
 
-int main(void) {
+int main(void)
+{
     init();
 reset:
     reset();
 
     while (true) {
         uint8_t action = input();
-        if (action == ACTION_QUIT) goto quit_game;
+        if (action == ACTION_QUIT)
+            goto quit_game;
         update();
         draw();
     }
@@ -32,22 +35,26 @@ quit_game:
     return 0;
 }
 
-void handle_error(zos_err_t err, const char* message, uint8_t fatal) {
+void handle_error(zos_err_t err, const char* message, uint8_t fatal)
+{
     if (err != ERR_SUCCESS) {
-        if (fatal) deinit();
+        if (fatal)
+            deinit();
         printf("\nError[%d] (%02x) failed to %s\n", err, err, message);
-        if (fatal) exit(err);
+        if (fatal)
+            exit(err);
     }
 }
 
-void init(void) {
+void init(void)
+{
     zos_err_t err;
     err = input_init(1);
     handle_error(err, "init keyboard", 1);
     input_flush();
 
     err = load_asset_file("enigma.zar");
-	handle_error(err, "load zar", 1);
+    handle_error(err, "load zar", 1);
 
     sprites_register_arena(SPRITE_ARENA, MAX_SPRITES);
 
@@ -66,7 +73,7 @@ void init(void) {
     err = gfx_initialize(ZVB_CTRL_VID_MODE_GFX_640_4BIT, &vctx);
     handle_error(err, "init graphics", 1);
 
-    clear_tilemap(LAYER0, 0, 0, 0, WIDTH, HEIGHT);  // clear all layer0 memory
+    clear_tilemap(LAYER0, 0, 0, 0, WIDTH, HEIGHT); // clear all layer0 memory
     clear_tilemap(LAYER1, 0, 0, 0, WIDTH, HEIGHT);
 
     err = load_palette(&vctx, "tileset.ztp", 0);
@@ -75,46 +82,49 @@ void init(void) {
     // err = gfx_tileset_add_color_tile(&vctx, EMPTY_TILE, 0);
     // handle_error(err, "create empty tile", 1);
 
-    uint16_t tile_offset = 0;
+    uint16_t tile_offset        = 0;
     gfx_tileset_options options = {
         .compression = TILESET_COMP_4BIT,
-        .pal_offset = 0,
-        .from_byte = 0,
+        .pal_offset  = 0,
+        .from_byte   = 0,
     };
     err = load_tileset(&vctx, "tileset.zts", &options);
     handle_error(err, "load tileset.zts", 1);
 
-    tile_offset += 16;
-    options.from_byte = tile_offset * 128;
-    err = load_tileset(&vctx, "player.zts", &options);
+    tile_offset       += 16;
+    options.from_byte  = tile_offset * 128;
+    err                = load_tileset(&vctx, "player.zts", &options);
     handle_error(err, "load player.zts", 1);
 
-    tile_offset += 32;
-    options.from_byte = tile_offset * 128;
-    err = load_tileset(&vctx, "enemies.zts", &options);
+    tile_offset       += 32;
+    options.from_byte  = tile_offset * 128;
+    err                = load_tileset(&vctx, "enemies.zts", &options);
     handle_error(err, "load enemies.zts", 1);
 
-    tile_offset += 32;
-    options.from_byte = tile_offset * 128;
-    err = load_tileset(&vctx, "gates.zts", &options);
+    tile_offset       += 32;
+    options.from_byte  = tile_offset * 128;
+    err                = load_tileset(&vctx, "gates.zts", &options);
     handle_error(err, "load gates.zts", 1);
 
-    tile_offset += 32;
-    options.from_byte = tile_offset * 128;
-    err = load_tileset(&vctx, "letters.zts", &options);
+    tile_offset       += 32;
+    options.from_byte  = tile_offset * 128;
+    err                = load_tileset(&vctx, "letters.zts", &options);
     handle_error(err, "load letters.zts", 1);
 
-    tile_offset += 32;
-    options.from_byte = tile_offset * 128;
-    err = load_tileset(&vctx, "numbers.zts", &options);
+    tile_offset       += 32;
+    options.from_byte  = tile_offset * 128;
+    err                = load_tileset(&vctx, "numbers.zts", &options);
     handle_error(err, "load numbers.zts", 1);
 
     err = player_init();
     handle_error(err, "init player", 1);
 
+    err = bullet_init();
+    handle_error(err, "init bullets", 1);
+
     // TODO: set red background for Banner/HUD
     clear_tilemap(LAYER1, RED_GREY, 0, 0, WIDTH, 4);
-    clear_tilemap(LAYER1, RED_YELLOW, 0, HEIGHT-5, WIDTH, 5);
+    clear_tilemap(LAYER1, RED_YELLOW, 0, HEIGHT - 5, WIDTH, 5);
     // clear_tilemap(LAYER1, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
 
     err = world_init(&vctx);
@@ -136,7 +146,8 @@ void init(void) {
     gfx_enable_screen(1);
 }
 
-void deinit(void) {
+void deinit(void)
+{
     // reset the tilemap scroll
     tilemap_scroll(0, 0, 0);
     tilemap_scroll(1, 0, 0);
@@ -151,32 +162,46 @@ void deinit(void) {
     handle_error(err, "deinit player", 0);
 }
 
-void reset(void) {
+void reset(void)
+{
     // reset your game state
 }
 
 static uint16_t input1_prev = 0;
-uint8_t input(void) {
+uint8_t input(void)
+{
     uint16_t input1 = input_get();
 
-    if (input1 == input1_prev) return 0;
+    if (input1 == input1_prev)
+        return 0;
     input1_prev = input1;
 
     player.direction.x = DIRECTION_NONE;
     player.direction.y = DIRECTION_NONE;
-    if (LEFT1) player.direction.x = DIRECTION_LEFT;
-    if (RIGHT1) player.direction.x = DIRECTION_RIGHT;
-    if (UP1) player.direction.y = DIRECTION_UP;
-    if (DOWN1) player.direction.y = DIRECTION_DOWN;
+    if (LEFT1)
+        player.direction.x = DIRECTION_LEFT;
+    if (RIGHT1)
+        player.direction.x = DIRECTION_RIGHT;
+    if (UP1)
+        player.direction.y = DIRECTION_UP;
+    if (DOWN1)
+        player.direction.y = DIRECTION_DOWN;
 
-    if(BUTTON1_B) player_shoot();
+    if (BUTTON1_B) {
+        if ((player.energy > 0) && bullet_shoot(&player.point, &player.direction)) {
+            player.energy--;
+            hud_energy(player.energy);
+        }
+    }
 
-    if (SELECT1) return ACTION_QUIT;
+    if (SELECT1)
+        return ACTION_QUIT;
 
     return 0;
 }
 
-void clear_tilemap(uint8_t layer, uint8_t tile, uint8_t x, uint8_t y, uint16_t width, uint16_t height) {
+void clear_tilemap(uint8_t layer, uint8_t tile, uint8_t x, uint8_t y, uint16_t width, uint16_t height)
+{
     uint8_t line[80];
     for (uint16_t row = 0; row < height; row++) {
         for (uint16_t col = 0; col < width; col++) {
@@ -187,8 +212,10 @@ void clear_tilemap(uint8_t layer, uint8_t tile, uint8_t x, uint8_t y, uint16_t w
     }
 }
 
-void update(void) {
+void update(void)
+{
     Edge screen_edge = player_move();
+    bullet_move();
     if (screen_edge != EdgeNone) {
         screen_transition(screen_edge, player.point, player_set_xy);
 
@@ -199,15 +226,18 @@ void update(void) {
     }
 }
 
-void draw_paused(uint8_t paused) {
-    (void*)paused;  // unreferenced
+void draw_paused(uint8_t paused)
+{
+    (void*) paused; // unreferenced
 }
 
-void draw_gameover(uint8_t gameover) {
-    (void*)gameover;  // unreferenced
+void draw_gameover(uint8_t gameover)
+{
+    (void*) gameover; // unreferenced
 }
 
-void draw(void) {
+void draw(void)
+{
     gfx_wait_vblank(&vctx);
     sprites_render(&vctx);
     gfx_wait_end_vblank(&vctx);

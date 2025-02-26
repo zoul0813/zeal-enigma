@@ -1,4 +1,4 @@
-#include <zgdk.h>
+#include <zgdk/types.h>
 
 #include "main.h"
 

@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <zvb_sprite.h>
-#include <zgdk.h>
+#include <zgdk/types.h>
 
 #include "main.h"
 
@@ -10,10 +10,9 @@
 #define PLAYER_SPEED (3U)
 
 #define ENERGY_DIVIDER (4U)
-#define MAX_ENERGY     (28U * ENERGY_DIVIDER)
+#define MAX_ENERGY     (27U * ENERGY_DIVIDER)
 #define MAX_LIVES      (3U)
 #define MAX_SCORE      (99999999U)
-#define MAX_BULLETS    (4U)
 
 typedef struct {
         union {
@@ -34,7 +33,6 @@ typedef struct {
         // sprites
         gfx_sprite* sprite_head;
         gfx_sprite* sprite_body;
-        gfx_sprite* bullets[MAX_BULLETS];
 } player_t;
 
 extern player_t player;

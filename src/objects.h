@@ -8,7 +8,7 @@
 #define GATE_LENGTH 8
 #define KEYS_INDEX  96
 #define FUEL_INDEX  5
-#define FUEL_VALUE  10
+#define FUEL_VALUE  MAX_ENERGY
 
 typedef enum {
     OBJECT_INACTIVE = 0x00,

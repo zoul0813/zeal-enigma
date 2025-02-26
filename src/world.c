@@ -1,6 +1,9 @@
 #include <stdio.h>
-#include "world.h"
+#include <zgdk/utils/print.h>
+#include <zgdk/tilemap.h>
+#include <zgdk/types.h>
 
+#include "world.h"
 #include "assets.h"
 #include "main.h"
 #include "objects.h"

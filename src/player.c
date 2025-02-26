@@ -1,17 +1,16 @@
-#include <stdio.h>
-#include <string.h>
 #include <zos_errors.h>
 #include <zvb_gfx.h>
 #include <zvb_sprite.h>
+#include <zgdk/sprites.h>
 
 #include "player.h"
+#include "bullet.h"
 #include "main.h"
 #include "world.h"
 #include "objects.h"
 #include "hud.h"
 
 #define PLAYER_TILE 16
-#define BULLET_TILE 13
 
 #define BODY_TILE() (player.sprite_head->tile + 9)
 
@@ -24,7 +23,7 @@ static int8_t frame_dir     = 1;
 error player_init(void)
 {
     player.score  = 900000;
-    player.energy = MAX_ENERGY - 10;
+    player.energy = MAX_ENERGY;
     player.lives  = 3;
     player.keys   = 0;
 
@@ -39,13 +38,6 @@ error player_init(void)
 
     sprite.tile        = BODY_TILE(); // body is always header + 9
     player.sprite_body = sprites_register(sprite);
-
-    sprite.tile = BULLET_TILE;
-    sprite.flags = SPRITE_NONE;
-    sprite.x = SCREEN_WIDTH + SPRITE_WIDTH;
-    for(uint8_t i = 0; i < MAX_BULLETS; i++) {
-        player.bullets[i] = sprites_register(sprite);
-    }
 
     return GFX_SUCCESS;
 }
@@ -190,12 +182,6 @@ Edge player_move(void)
     else if (y > (ROOM_BOTTOM_PX))
         return EdgeBottom;
     return EdgeNone;
-}
-
-void player_shoot(void)
-{
-    player.energy--;
-    hud_energy(player.energy);
 }
 
 void player_set_xy(uint16_t x, uint16_t y)

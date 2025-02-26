@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <zgdk.h>
+#include <zgdk/utils/print.h>
 #include "hud.h"
 #include "main.h"
 #include "objects.h"
@@ -71,8 +71,9 @@ void hud_energy(uint8_t energy)
     for(;i<MAX_ENERGY/ENERGY_DIVIDER;i++) {
         buffer[i] = HUD_DRAINED;
     }
+    buffer[i] = HUD_DRAINED; // last bar
 
-    gfx_tilemap_load(&vctx, buffer, MAX_ENERGY/ENERGY_DIVIDER, LAYER0, 10, 28);
+    gfx_tilemap_load(&vctx, buffer, MAX_ENERGY/ENERGY_DIVIDER + 1, LAYER0, 10, 28);
 }
 
 void hud_keys(uint16_t keys)
