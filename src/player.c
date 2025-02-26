@@ -11,6 +11,7 @@
 #include "hud.h"
 
 #define PLAYER_TILE 16
+#define BULLET_TILE 13
 
 #define BODY_TILE() (player.sprite_head->tile + 9)
 
@@ -38,6 +39,13 @@ error player_init(void)
 
     sprite.tile        = BODY_TILE(); // body is always header + 9
     player.sprite_body = sprites_register(sprite);
+
+    sprite.tile = BULLET_TILE;
+    sprite.flags = SPRITE_NONE;
+    sprite.x = SCREEN_WIDTH + SPRITE_WIDTH;
+    for(uint8_t i = 0; i < MAX_BULLETS; i++) {
+        player.bullets[i] = sprites_register(sprite);
+    }
 
     return GFX_SUCCESS;
 }
@@ -130,7 +138,7 @@ Edge player_move(void)
         uint8_t value = type - KEYS_INDEX;
         object_t* key = &keys[value];
         key->flags    = OBJECT_INACTIVE;
-        room_set_tile(key->x, key->y, WORLD_NONE); // make it a ground tile
+        room_set_tile(key->x, key->y, TILE_NONE); // make it a ground tile
 
         player.score += 5000; /// 5,000 for keys
         player.keys  |= (1 << value);
@@ -158,7 +166,7 @@ Edge player_move(void)
             can = &fuel[i];
             if (can->room == roomId) {
                 can->flags = OBJECT_INACTIVE;
-                room_set_tile(can->x, can->y, WORLD_NONE); // make it a ground tile
+                room_set_tile(can->x, can->y, TILE_NONE); // make it a ground tile
 
                 player.energy += FUEL_VALUE;
                 if (player.energy > MAX_ENERGY)

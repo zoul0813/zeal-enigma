@@ -13,6 +13,7 @@
 #define MAX_ENERGY     (28U * ENERGY_DIVIDER)
 #define MAX_LIVES      (3U)
 #define MAX_SCORE      (99999999U)
+#define MAX_BULLETS    (4U)
 
 typedef struct {
         union {
@@ -33,6 +34,7 @@ typedef struct {
         // sprites
         gfx_sprite* sprite_head;
         gfx_sprite* sprite_body;
+        gfx_sprite* bullets[MAX_BULLETS];
 } player_t;
 
 extern player_t player;

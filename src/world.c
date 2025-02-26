@@ -174,7 +174,7 @@ uint8_t screen_transition(const Edge edge, const Point point, const transition_c
                 transition = 1;
             } else {
                 // don't let the player go off screen
-                callback(SPRITE_WIDTH, point.y);
+                callback(SPRITE_WIDTH + ROOM_OFFSET_X, point.y);
             }
             break;
         case EdgeRight:
@@ -183,7 +183,7 @@ uint8_t screen_transition(const Edge edge, const Point point, const transition_c
                 transition = 1;
             } else {
                 // don't let the player go off screen
-                callback(SCREEN_WIDTH, point.y);
+                callback((SPRITE_WIDTH * ROOM_WIDTH) + ROOM_OFFSET_X, point.y);
             }
             break;
         case EdgeTop:
@@ -192,7 +192,7 @@ uint8_t screen_transition(const Edge edge, const Point point, const transition_c
                 transition = 1;
             } else {
                 // don't let the player go off screen
-                callback(point.x, SPRITE_HEIGHT);
+                callback(point.x, SPRITE_HEIGHT + ROOM_OFFSET_Y);
             }
             break;
         case EdgeBottom:
@@ -201,7 +201,7 @@ uint8_t screen_transition(const Edge edge, const Point point, const transition_c
                 transition = 1;
             } else {
                 // don't let the player go off screen
-                callback(point.x, SCREEN_HEIGHT);
+                callback(point.x, (SPRITE_HEIGHT * ROOM_HEIGHT) + ROOM_OFFSET_Y);
             }
             break;
     }

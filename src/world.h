@@ -26,17 +26,13 @@
 // offset for where the map starts in the zar
 #define TILEMAP_OFFSET 0
 
-#define WORLD_NONE 0
-#define WORLD_WALL 1
-#define WORLD_GRID 2
-
 // starting room
 #define WORLD_START_X  3
 #define WORLD_START_Y  3
 
 // starting position of player on screen
-#define WORLD_PLAYER_X ((WIDTH / 4) * 16)
-#define WORLD_PLAYER_Y (((HEIGHT / 4) * 2) * 16)
+#define WORLD_PLAYER_X ((WIDTH / 4) * SPRITE_WIDTH)
+#define WORLD_PLAYER_Y (((HEIGHT / 4) * 3) * SPRITE_HEIGHT)
 
 #define ROOM_ID() ((world_position.y * WORLD_WIDTH) + world_position.x)
 
