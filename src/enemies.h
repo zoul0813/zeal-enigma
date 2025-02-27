@@ -10,6 +10,7 @@
 #define MAX_ENEMIES    8
 #define ENEMY_INDEX    48
 #define ENEMY_INACTIVE TILE_NONE
+#define ENEMY_SPEED    2
 
 typedef enum {
     ENEMY_A = 0x01,

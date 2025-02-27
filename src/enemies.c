@@ -116,11 +116,31 @@ void enemies_move(void) {
         x = enemy->sprite_l->x;
         y = enemy->sprite_l->y;
 
-        x *= enemy->direction.x;
-        y *= enemy->direction.y;
+        x += enemy->direction.x * ENEMY_SPEED;
+        y += enemy->direction.y * ENEMY_SPEED;
+
+        if(x < ROOM_LEFT_PX + SPRITE_WIDTH) {
+            x = ROOM_LEFT_PX + SPRITE_WIDTH + 1;
+            enemy->direction.x *= -1;
+        }
+        if(x > ROOM_RIGHT_PX - SPRITE_WIDTH) {
+            x = ROOM_RIGHT_PX - SPRITE_WIDTH - 1;
+            enemy->direction.x *= -1;
+        }
+
+        if(y < ROOM_TOP_PX + SPRITE_HEIGHT) {
+            y = ROOM_TOP_PX + SPRITE_HEIGHT + 1;
+            enemy->direction.y *= -1;
+        }
+
+        if(y > ROOM_BOTTOM_PX - SPRITE_WIDTH) {
+            y = ROOM_BOTTOM_PX - SPRITE_WIDTH - 1;
+            enemy->direction.y *= -1;
+        }
 
         tx = (x >> 4) + 1;
         ty = (y >> 4) + 1;
+
         TileType type = screen_get_tile(x, y);
         if(type != TILE_NONE) {
             enemy->direction.x *= -1;
