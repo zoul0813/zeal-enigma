@@ -70,10 +70,8 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
             uint8_t tile = data[(row * ROOM_WIDTH) + col];
             TileType type = TILE_NONE;
 
-            if ((tile == 1)) {
+            if (tile > 0) {
                 type = TILE_WALL;
-            } else if (tile > 0) {
-                type = TILE_UNKNOWN;
             }
 
             SCREEN[row][col] = type;

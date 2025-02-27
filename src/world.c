@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <zgdk/utils/print.h>
+#include <zgdk/utils/rand.h>
 #include <zgdk/tilemap.h>
 #include <zgdk/types.h>
 
@@ -7,6 +8,7 @@
 #include "assets.h"
 #include "main.h"
 #include "objects.h"
+#include "enemies.h"
 
 /**
  * It is assumed the viewport is always the screen 0,1 on the tilemap
@@ -103,6 +105,7 @@ error world_init(gfx_context* ctx)
     room_render_keys();
     room_render_fuel();
     room_render_gate();
+    enemies_spawn(ROOM_ID());
 
     tilemap_scroll_x(0, 0);
     return ERR_SUCCESS;
@@ -127,6 +130,7 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
     room_render_keys();
     room_render_fuel();
     room_render_gate();
+    enemies_spawn(ROOM_ID());
 
     uint8_t roomId = ROOM_ID();
     sprintf(buffer, "%02d", roomId);
@@ -136,7 +140,7 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
     switch (edge) {
         case EdgeLeft: callback(ROOM_RIGHT_PX, point.y); break;
         case EdgeRight: callback(ROOM_LEFT_PX + SPRITE_WIDTH, point.y); break;
-        case EdgeTop: callback(point.x, ROOM_BOTTOM_PX); break;
+        case EdgeTop: callback(point.x, ROOM_BOTTOM_PX - SPRITE_HEIGHT); break;
         case EdgeBottom: callback(point.x, ROOM_TOP_PX + SPRITE_HEIGHT); break;
     }
     gfx_wait_end_vblank(&vctx);
@@ -145,9 +149,9 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
 TileType screen_get_tile(const uint8_t x, const uint8_t y)
 {
     // out of bounds, assume TILE_NONE
-    if (x >= WIDTH)
+    if (x >= ROOM_WIDTH)
         return TILE_NONE;
-    if (y >= HEIGHT)
+    if (y > ROOM_HEIGHT - 1)
         return TILE_NONE;
     return SCREEN[y][x];
 }

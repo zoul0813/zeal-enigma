@@ -13,6 +13,7 @@
 #include "world.h"
 #include "player.h"
 #include "bullet.h"
+#include "enemies.h"
 
 gfx_context vctx;
 uint8_t buffer[WIDTH];
@@ -55,6 +56,8 @@ void init(void)
 
     err = load_asset_file("enigma.zar");
     handle_error(err, "load zar", 1);
+
+    rand8_seed(rand8_quick());
 
     sprites_register_arena(SPRITE_ARENA, MAX_SPRITES);
 
@@ -121,6 +124,9 @@ void init(void)
 
     err = bullet_init();
     handle_error(err, "init bullets", 1);
+
+    err = enemies_init();
+    handle_error(err, "init enemies", 1);
 
     // TODO: set red background for Banner/HUD
     clear_tilemap(LAYER1, RED_GREY, 0, 0, WIDTH, 4);
@@ -216,6 +222,7 @@ void update(void)
 {
     Edge screen_edge = player_move();
     bullet_move();
+    enemies_move();
     if (screen_edge != EdgeNone) {
         screen_transition(screen_edge, player.point, player_set_xy);
 
