@@ -62,18 +62,21 @@ Edge player_move(void)
     x          += (player.direction.x * PLAYER_SPEED);
     y          += (player.direction.y * PLAYER_SPEED);
 
+    Edge edge = EdgeNone;
     switch (player.direction.x) {
         case DIRECTION_LEFT:
             player.sprite_head->tile  = PLAYER_TILE + 6 + frame_offset;
             player.sprite_body->tile  = BODY_TILE();
             player.sprite_head->flags = SPRITE_FLIP_X;
             player.sprite_body->flags = SPRITE_FLIP_X;
+            edge                      = EdgeLeft;
             break;
         case DIRECTION_RIGHT:
             player.sprite_head->tile  = PLAYER_TILE + 6 + frame_offset;
             player.sprite_body->tile  = BODY_TILE();
             player.sprite_head->flags = SPRITE_NONE;
             player.sprite_body->flags = SPRITE_NONE;
+            edge                      = EdgeRight;
             break;
     }
 
@@ -81,10 +84,12 @@ Edge player_move(void)
         case DIRECTION_UP:
             player.sprite_head->tile = PLAYER_TILE + frame_offset;
             player.sprite_body->tile = BODY_TILE();
+            edge                     = EdgeTop;
             break;
         case DIRECTION_DOWN:
             player.sprite_head->tile = PLAYER_TILE + 3 + frame_offset;
             player.sprite_body->tile = BODY_TILE();
+            edge                     = EdgeBottom;
             break;
     }
 
@@ -97,10 +102,21 @@ Edge player_move(void)
     if (player.direction.y > 0)
         ty++;
 
-    TileType type_head = screen_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y);
-    TileType type_body = screen_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y + 1);
+    TileType type_head = room_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y);
+    TileType type_body = room_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y + 1);
 
-    TileType type = type_head | type_body;
+    // Point point         = {
+    //     .x = player.point.x + 8,
+    //     .y = player.point.y + 8,
+    // };
+    // TileType type_head  = screen_get_tile(&point, edge);
+    // point.y            += SPRITE_HEIGHT;
+    // TileType type_body  = screen_get_tile(&point, edge);
+
+    // check the head first
+    TileType type = type_head;
+    // if it's empty, try the body?
+    if(type == TILE_NONE) type = type_body;
 
 #if DEBUG
     // type
@@ -135,9 +151,9 @@ Edge player_move(void)
         player.score += 5000; /// 5,000 for keys
         player.keys  |= (1 << value);
 
-        for(uint8_t i = 0; i < gates_len; i++) {
-            object_t *gate = &gates[i];
-            if(gate->id == value) {
+        for (uint8_t i = 0; i < gates_len; i++) {
+            object_t* gate = &gates[i];
+            if (gate->id == value) {
                 gate->flags = OBJECT_INACTIVE;
             }
         }
@@ -146,7 +162,7 @@ Edge player_move(void)
         hud_keys(player.keys);
     }
 
-    if((type >= GATES_INDEX) && (type <= GATES_INDEX + gates_len)) {
+    if ((type >= GATES_INDEX) && (type <= GATES_INDEX + gates_len)) {
         return EdgeNone;
     }
 

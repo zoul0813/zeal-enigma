@@ -166,6 +166,14 @@ void deinit(void)
 
     err = player_deinit();
     handle_error(err, "deinit player", 0);
+
+
+    for(uint8_t y = 0; y < ROOM_HEIGHT; y++) {
+        for(uint8_t x = 0; x < ROOM_WIDTH; x++) {
+            printf("%02x", SCREEN[y][x]);
+        }
+        printf("\n");
+    }
 }
 
 void reset(void)

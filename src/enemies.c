@@ -72,7 +72,7 @@ void enemies_spawn(uint8_t roomId)
             // offset by 2 tiles on either side (4)
             y += ROOM_OFFSET_Y + 4;
 
-            type = screen_get_tile(x, y);
+            type = room_get_tile(x, y);
         } while (type != TILE_NONE);
 
         sprintf(buffer, "%03d %03d %02d", x, y, type);
@@ -141,7 +141,7 @@ void enemies_move(void) {
         tx = (x >> 4) + 1;
         ty = (y >> 4) + 1;
 
-        TileType type = screen_get_tile(x, y);
+        TileType type = room_get_tile(x, y);
         if(type != TILE_NONE) {
             enemy->direction.x *= -1;
             enemy->direction.y *= -1;

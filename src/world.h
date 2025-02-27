@@ -55,6 +55,7 @@ void room_set_tile(const uint8_t x, const uint8_t y, const uint8_t tile);
 
 void screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback);
 uint8_t screen_transition(const Edge edge, const Point point, const transition_callback_t callback);
-TileType screen_get_tile(const uint8_t x, const uint8_t y);
+TileType screen_get_tile(Point* point, Edge edge);
+TileType room_get_tile(const uint8_t x, const uint8_t y);
 
 #endif

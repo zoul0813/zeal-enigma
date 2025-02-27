@@ -14,59 +14,72 @@
  * It is assumed the viewport is always the screen 0,1 on the tilemap
  */
 
-#define SLIDE_SPEED  4
+#define SLIDE_SPEED 4
 
 Vector2_u8 world_position;
 TileType SCREEN[ROOM_HEIGHT][ROOM_WIDTH];
 
-void room_set_palette(void) {
+void room_set_palette(void)
+{
     // palette swap
     uint8_t palette_offset = ((world_position.x * world_position.y) % 9) + 4;
     uint16_t new_palette[2];
     new_palette[0] = palette[palette_offset];
     new_palette[1] = palette[(palette_offset + 1) % PALETTE_SIZE];
-    if(new_palette[1] < 4) new_palette[1] += 4;
+    if (new_palette[1] < 4)
+        new_palette[1] += 4;
 
     gfx_palette_load(&vctx, &new_palette, sizeof(new_palette), 1);
 }
 
-void room_render_keys(void) {
+void room_render_keys(void)
+{
     uint8_t roomId = ROOM_ID();
-    for(uint8_t i = 0; i < keys_len; i++) {
-        object_t *key = &keys[i];
-        if(key->room != roomId) continue;
-        if(key->flags != OBJECT_ACTIVE) continue;
+    for (uint8_t i = 0; i < keys_len; i++) {
+        object_t* key = &keys[i];
+        if (key->room != roomId)
+            continue;
+        if (key->flags != OBJECT_ACTIVE)
+            continue;
         gfx_tilemap_place(&vctx, KEYS_INDEX + i, LAYER0, key->x + ROOM_OFFSET_X, key->y + ROOM_OFFSET_Y);
         SCREEN[key->y][key->x] = KEYS_INDEX + i;
     }
 }
 
-void room_render_fuel(void) {
+void room_render_fuel(void)
+{
     uint8_t roomId = ROOM_ID();
-    for(uint8_t i = 0; i < fuel_len; i++) {
-        object_t *can = &fuel[i];
-        if(can->room != roomId) continue;
-        if(can->flags != OBJECT_ACTIVE) continue;
+    for (uint8_t i = 0; i < fuel_len; i++) {
+        object_t* can = &fuel[i];
+        if (can->room != roomId)
+            continue;
+        if (can->flags != OBJECT_ACTIVE)
+            continue;
         gfx_tilemap_place(&vctx, FUEL_INDEX, LAYER0, can->x + ROOM_OFFSET_X, can->y + ROOM_OFFSET_Y);
         SCREEN[can->y][can->x] = FUEL_INDEX;
     }
 }
 
-void room_render_gate(void) {
+void room_render_gate(void)
+{
     uint8_t roomId = ROOM_ID();
-    for(uint8_t i = 0; i < gates_len; i++) {
-        object_t *gate = &gates[i];
-        if(gate->room != roomId) continue;
-        if(gate->flags != OBJECT_ACTIVE) continue;
+    for (uint8_t i = 0; i < gates_len; i++) {
+        object_t* gate = &gates[i];
+        if (gate->room != roomId)
+            continue;
+        if (gate->flags != OBJECT_ACTIVE)
+            continue;
 
-        if((gate->flags & OBJECT_VERTICAL)) {
-            for(uint8_t j = 0; j < GATE_LENGTH; j++) {
-                gfx_tilemap_place(&vctx, gate->id + GATES_INDEX, LAYER0, gate->x + ROOM_OFFSET_X, gate->y + j + ROOM_OFFSET_Y);
+        if ((gate->flags & OBJECT_VERTICAL)) {
+            for (uint8_t j = 0; j < GATE_LENGTH; j++) {
+                gfx_tilemap_place(&vctx, gate->id + GATES_INDEX, LAYER0, gate->x + ROOM_OFFSET_X,
+                                  gate->y + j + ROOM_OFFSET_Y);
                 SCREEN[gate->y + j][gate->x] = gate->id + GATES_INDEX;
             }
         } else {
-            for(uint8_t j = 0; j < GATE_LENGTH; j++) {
-                gfx_tilemap_place(&vctx, gate->id + GATES_INDEX, LAYER0, gate->x + j + ROOM_OFFSET_X, gate->y + ROOM_OFFSET_Y);
+            for (uint8_t j = 0; j < GATE_LENGTH; j++) {
+                gfx_tilemap_place(&vctx, gate->id + GATES_INDEX, LAYER0, gate->x + j + ROOM_OFFSET_X,
+                                  gate->y + ROOM_OFFSET_Y);
                 SCREEN[gate->y][gate->x + j] = gate->id + GATES_INDEX;
             }
         }
@@ -97,7 +110,7 @@ error world_init(gfx_context* ctx)
     world_position.x = WORLD_START_X;
     world_position.y = WORLD_START_Y;
     room_set_palette();
-    zos_err_t err    = load_tilemap(ctx, world_position.x, world_position.y, 0, 0);
+    zos_err_t err = load_tilemap(ctx, world_position.x, world_position.y, 0, 0);
 
     if (err != ERR_SUCCESS)
         return err;
@@ -146,7 +159,29 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
     gfx_wait_end_vblank(&vctx);
 }
 
-TileType screen_get_tile(const uint8_t x, const uint8_t y)
+TileType screen_get_tile(Point* point, Edge edge)
+{
+    // convert screen x/y into tile x/y
+    uint8_t tx, ty, tile;
+    tx = (point->x - ROOM_LEFT_PX) >> 4;
+    ty = (point->y - ROOM_TOP_PX) >> 4;
+
+    // look for tile on edge?
+    if (edge == EdgeLeft)
+        tx--;
+    // if (edge == EdgeRight)
+    //     tx+=2;
+    if (edge == EdgeTop)
+        ty--;
+    // if (edge == EdgeBottom)
+    //     ty+=2;
+
+    tile = SCREEN[ty][tx];
+
+    return tile;
+}
+
+TileType room_get_tile(const uint8_t x, const uint8_t y)
 {
     // out of bounds, assume TILE_NONE
     if (x >= ROOM_WIDTH)
