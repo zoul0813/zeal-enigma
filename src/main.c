@@ -76,8 +76,8 @@ void init(void)
     err = gfx_initialize(ZVB_CTRL_VID_MODE_GFX_640_4BIT, &vctx);
     handle_error(err, "init graphics", 1);
 
-    clear_tilemap(LAYER0, 0, 0, 0, WIDTH, HEIGHT); // clear all layer0 memory
-    clear_tilemap(LAYER1, 0, 0, 0, WIDTH, HEIGHT);
+    tilemap_fill(&vctx, LAYER0, 0, 0, 0, WIDTH, HEIGHT); // clear all layer0 memory
+    tilemap_fill(&vctx, LAYER1, 0, 0, 0, WIDTH, HEIGHT);
 
     err = load_palette(&vctx, "tileset.ztp", 0);
     handle_error(err, "load palette", 1);
@@ -128,10 +128,8 @@ void init(void)
     err = enemies_init();
     handle_error(err, "init enemies", 1);
 
-    // TODO: set red background for Banner/HUD
-    clear_tilemap(LAYER1, RED_GREY, 0, 0, WIDTH, 4);
-    clear_tilemap(LAYER1, RED_YELLOW, 0, HEIGHT - 5, WIDTH, 5);
-    // clear_tilemap(LAYER1, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
+    tilemap_fill(&vctx, LAYER1, RED_GREY, 0, 0, WIDTH, 4);
+    tilemap_fill(&vctx, LAYER1, RED_YELLOW, 0, HEIGHT - 5, WIDTH, 5);
 
     err = world_init(&vctx);
     handle_error(err, "initialize world", 1);
@@ -154,10 +152,6 @@ void init(void)
 
 void deinit(void)
 {
-    // reset the tilemap scroll
-    tilemap_scroll(0, 0, 0);
-    tilemap_scroll(1, 0, 0);
-
     // reset screen
     ioctl(DEV_STDOUT, CMD_RESET_SCREEN, NULL);
 
@@ -170,7 +164,7 @@ void deinit(void)
 
     for(uint8_t y = 0; y < ROOM_HEIGHT; y++) {
         for(uint8_t x = 0; x < ROOM_WIDTH; x++) {
-            printf("%02x", SCREEN[y][x]);
+            printf("%02x", tilemap_get_xy(x, y));
         }
         printf("\n");
     }
@@ -214,31 +208,19 @@ uint8_t input(void)
     return 0;
 }
 
-void clear_tilemap(uint8_t layer, uint8_t tile, uint8_t x, uint8_t y, uint16_t width, uint16_t height)
-{
-    uint8_t line[80];
-    for (uint16_t row = 0; row < height; row++) {
-        for (uint16_t col = 0; col < width; col++) {
-            line[col] = tile;
-        }
-        gfx_error err = gfx_tilemap_load(&vctx, line, width, layer, x, y + row);
-        handle_error(err, "clear tilemap", 1);
-    }
-}
-
 void update(void)
 {
-    Edge screen_edge = player_move();
     bullet_move();
     enemies_move();
-    if (screen_edge != EdgeNone) {
-        screen_transition(screen_edge, player.point, player_set_xy);
 
-#if DEBUG
-        sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, ROOM_ID());
-        nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
-#endif
+    bool player_moved = player_move();
+    player_animate();
+    if(player_moved) {
+        player_collide();
     }
+    // if (screen_edge != EdgeNone) {
+    //     screen_transition(screen_edge, player.point, player_set_xy);
+    // }
 }
 
 void draw_paused(uint8_t paused)

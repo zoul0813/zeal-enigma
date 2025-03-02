@@ -23,6 +23,8 @@ typedef struct {
                 };
         };
 
+        Point last_point;
+
         Direction direction;
 
         uint8_t lives;
@@ -39,8 +41,13 @@ extern player_t player;
 
 error player_init(void);
 error player_deinit(void);
-Edge player_move(void);
+bool player_move(void);
+void player_animate(void);
+Edge player_collide(void);
+
 void player_shoot(void);
+
 void player_set_xy(uint16_t x, uint16_t y);
+inline void player_set_point(Point *point);
 
 #endif

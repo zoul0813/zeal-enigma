@@ -2,6 +2,7 @@
 #include <zgdk/utils/print.h>
 #include <zgdk/utils/rand.h>
 #include <zgdk/tilemap.h>
+#include <zgdk/tilemap/scroll.h>
 #include <zgdk/types.h>
 
 #include "world.h"
@@ -17,7 +18,9 @@
 #define SLIDE_SPEED 4
 
 Vector2_u8 world_position;
-TileType SCREEN[ROOM_HEIGHT][ROOM_WIDTH];
+
+TileType TILES[ROOM_HEIGHT * ROOM_WIDTH];
+Tilemap ROOM;
 
 void room_set_palette(void)
 {
@@ -42,7 +45,7 @@ void room_render_keys(void)
         if (key->flags != OBJECT_ACTIVE)
             continue;
         gfx_tilemap_place(&vctx, KEYS_INDEX + i, LAYER0, key->x + ROOM_OFFSET_X, key->y + ROOM_OFFSET_Y);
-        SCREEN[key->y][key->x] = KEYS_INDEX + i;
+        tilemap_set_xy(key->x, key->y, KEYS_INDEX + i);
     }
 }
 
@@ -56,7 +59,7 @@ void room_render_fuel(void)
         if (can->flags != OBJECT_ACTIVE)
             continue;
         gfx_tilemap_place(&vctx, FUEL_INDEX, LAYER0, can->x + ROOM_OFFSET_X, can->y + ROOM_OFFSET_Y);
-        SCREEN[can->y][can->x] = FUEL_INDEX;
+        tilemap_set_xy(can->x, can->y, FUEL_INDEX);
     }
 }
 
@@ -74,13 +77,13 @@ void room_render_gate(void)
             for (uint8_t j = 0; j < GATE_LENGTH; j++) {
                 gfx_tilemap_place(&vctx, gate->id + GATES_INDEX, LAYER0, gate->x + ROOM_OFFSET_X,
                                   gate->y + j + ROOM_OFFSET_Y);
-                SCREEN[gate->y + j][gate->x] = gate->id + GATES_INDEX;
+                tilemap_set_xy(gate->x, gate->y + j, GATES_INDEX + gate->id);
             }
         } else {
             for (uint8_t j = 0; j < GATE_LENGTH; j++) {
                 gfx_tilemap_place(&vctx, gate->id + GATES_INDEX, LAYER0, gate->x + j + ROOM_OFFSET_X,
                                   gate->y + ROOM_OFFSET_Y);
-                SCREEN[gate->y][gate->x + j] = gate->id + GATES_INDEX;
+                tilemap_set_xy(gate->x + j, gate->y, GATES_INDEX + gate->id);
             }
         }
     }
@@ -96,16 +99,19 @@ void room_set_tile(uint8_t x, uint8_t y, uint8_t tile)
 
     // place tile on screen
     gfx_tilemap_place(&vctx, tile, LAYER0, ROOM_OFFSET_X + x, ROOM_OFFSET_Y + y);
-    SCREEN[y][x] = TILE_NONE;
+    tilemap_set_xy(x, y, TILE_NONE);
 
-    // place tile into world
-    data[(y * WIDTH) + x] = tile;
+    // // place tile into world
+    // data[(y * WIDTH) + x] = tile;
 }
 
 /** WORLD FUNCTIONS */
 
 error world_init(gfx_context* ctx)
 {
+    rect_set(&ROOM.rect, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
+    tilemap_register(&ROOM, TILES);
+
     // load the screen the player starts on
     world_position.x = WORLD_START_X;
     world_position.y = WORLD_START_Y;
@@ -176,7 +182,7 @@ TileType screen_get_tile(Point* point, Edge edge)
     // if (edge == EdgeBottom)
     //     ty+=2;
 
-    tile = SCREEN[ty][tx];
+    tile = tilemap_get_xy(tx, ty);
 
     return tile;
 }
@@ -188,7 +194,7 @@ TileType room_get_tile(const uint8_t x, const uint8_t y)
         return TILE_NONE;
     if (y > ROOM_HEIGHT - 1)
         return TILE_NONE;
-    return SCREEN[y][x];
+    return tilemap_get_xy(x, y);
 }
 
 /**

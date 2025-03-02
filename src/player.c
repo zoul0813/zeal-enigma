@@ -2,6 +2,8 @@
 #include <zvb_gfx.h>
 #include <zvb_sprite.h>
 #include <zgdk/sprites.h>
+#include <zgdk/tilemap.h>
+#include <zgdk/tiles.h>
 
 #include "player.h"
 #include "bullet.h"
@@ -27,8 +29,8 @@ error player_init(void)
     player.lives  = 3;
     player.keys   = 0;
 
-    player.point.x = WORLD_PLAYER_X;
-    player.point.y = WORLD_PLAYER_Y;
+    player.direction.x = 0;
+    player.direction.y = 0;
 
     gfx_sprite sprite = {
         .tile  = PLAYER_TILE + frame_offset,
@@ -39,6 +41,9 @@ error player_init(void)
     sprite.tile        = BODY_TILE(); // body is always header + 9
     player.sprite_body = sprites_register(sprite);
 
+    player_set_xy(WORLD_PLAYER_X, WORLD_PLAYER_Y);
+    point_copy(&player.last_point, &player.point);
+
     return GFX_SUCCESS;
 }
 
@@ -47,8 +52,7 @@ error player_deinit(void)
     return ERR_SUCCESS;
 }
 
-Edge player_move(void)
-{
+void player_animate(void) {
     if (frame > 7) {
         frame         = 0;
         frame_offset += frame_dir;
@@ -57,26 +61,18 @@ Edge player_move(void)
         }
     }
 
-    uint16_t x  = player.point.x;
-    uint16_t y  = player.point.y;
-    x          += (player.direction.x * PLAYER_SPEED);
-    y          += (player.direction.y * PLAYER_SPEED);
-
-    Edge edge = EdgeNone;
     switch (player.direction.x) {
         case DIRECTION_LEFT:
             player.sprite_head->tile  = PLAYER_TILE + 6 + frame_offset;
             player.sprite_body->tile  = BODY_TILE();
             player.sprite_head->flags = SPRITE_FLIP_X;
             player.sprite_body->flags = SPRITE_FLIP_X;
-            edge                      = EdgeLeft;
             break;
         case DIRECTION_RIGHT:
             player.sprite_head->tile  = PLAYER_TILE + 6 + frame_offset;
             player.sprite_body->tile  = BODY_TILE();
             player.sprite_head->flags = SPRITE_NONE;
             player.sprite_body->flags = SPRITE_NONE;
-            edge                      = EdgeRight;
             break;
     }
 
@@ -84,14 +80,87 @@ Edge player_move(void)
         case DIRECTION_UP:
             player.sprite_head->tile = PLAYER_TILE + frame_offset;
             player.sprite_body->tile = BODY_TILE();
-            edge                     = EdgeTop;
             break;
         case DIRECTION_DOWN:
             player.sprite_head->tile = PLAYER_TILE + 3 + frame_offset;
             player.sprite_body->tile = BODY_TILE();
-            edge                     = EdgeBottom;
             break;
     }
+
+    frame++;
+}
+
+bool player_move(void)
+{
+    point_copy(&player.last_point, &player.point);
+
+    // can't move
+    if(player.direction.x == 0 && player.direction.y == 0) return false;
+
+    uint16_t x  = player.point.x;
+    uint16_t y  = player.point.y;
+    x          += (player.direction.x * PLAYER_SPEED);
+    y          += (player.direction.y * PLAYER_SPEED);
+
+    if (x < SPRITE_WIDTH)
+        x = SPRITE_WIDTH;
+    else if (x > SCREEN_WIDTH)
+        x = SCREEN_WIDTH;
+    if (y < SPRITE_HEIGHT)
+        y = SPRITE_HEIGHT;
+    else if (y > SCREEN_HEIGHT)
+        y = SCREEN_HEIGHT;
+
+    // didn't move
+    if((x == player.point.x) && (y == player.point.y)) return false;
+
+    player_set_xy(x, y);
+    return true;
+}
+
+Edge player_collide(void) {
+    Tile edge_tile;
+    if(player.direction.x < 0) {
+        if(tile_get_edge(&player.rect, EdgeLeft, &edge_tile)) {
+            tilemap_place(&vctx, LAYER1, 2, &edge_tile.point);
+            uint8_t tile = tilemap_get(&edge_tile.point);
+            if(tile != TILE_NONE) {
+                player_set_xy(edge_tile.rect.x, player.point.y);
+            }
+        }
+    } else if(player.direction.x > 0) {
+        if(tile_get_edge(&player.rect, EdgeRight, &edge_tile)) {
+            tilemap_place(&vctx, LAYER1, 2, &edge_tile.point);
+            uint8_t tile = tilemap_get(&edge_tile.point);
+            if(tile != 0) {
+                player_set_xy(edge_tile.rect.x, player.point.y);
+            }
+        }
+    }
+
+    if(player.direction.y < 0) {
+        if(tile_get_edge(&player.rect, EdgeTop, &edge_tile)) {
+            tilemap_place(&vctx, LAYER1, 2, &edge_tile.point);
+            uint8_t tile = tilemap_get(&edge_tile.point);
+            if(tile != TILE_NONE) {
+                player_set_xy(player.point.x, edge_tile.rect.y);
+            }
+        }
+    } else if(player.direction.y > 0) {
+        if(tile_get_edge(&player.rect, EdgeBottom, &edge_tile)) {
+            tilemap_place(&vctx, LAYER1, 2, &edge_tile.point);
+            uint8_t tile = tilemap_get(&edge_tile.point);
+            if(tile != TILE_NONE) {
+                player_set_xy(player.point.x, edge_tile.rect.y);
+            }
+        }
+    }
+
+    return EdgeNone;
+
+    uint16_t x  = player.point.x;
+    uint16_t y  = player.point.y;
+    Edge edge = EdgeNone;
 
     // TODO: better tile x/y coordinate system?
     uint8_t tx, ty;
@@ -105,13 +174,6 @@ Edge player_move(void)
     TileType type_head = room_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y);
     TileType type_body = room_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y + 1);
 
-    // Point point         = {
-    //     .x = player.point.x + 8,
-    //     .y = player.point.y + 8,
-    // };
-    // TileType type_head  = screen_get_tile(&point, edge);
-    // point.y            += SPRITE_HEIGHT;
-    // TileType type_body  = screen_get_tile(&point, edge);
 
     // check the head first
     TileType type = type_head;
@@ -131,8 +193,6 @@ Edge player_move(void)
     sprintf(buffer, "%03d %03d", tx, ty);
     nprint_string_layer(&vctx, buffer, 7, LAYER0, 0, HEIGHT - 1);
 #endif
-
-    frame++;
 
     switch (type) {
         case TILE_UNKNOWN: // fall thru
@@ -186,26 +246,14 @@ Edge player_move(void)
         }
     }
 
-
-    player_set_xy(x, y);
-
-    if (x < (ROOM_LEFT_PX + SPRITE_WIDTH))
-        return EdgeLeft;
-    else if (x > (ROOM_RIGHT_PX))
-        return EdgeRight;
-    if (y < (ROOM_TOP_PX + SPRITE_HEIGHT))
-        return EdgeTop;
-    else if (y > (ROOM_BOTTOM_PX))
-        return EdgeBottom;
-    return EdgeNone;
+    return edge;
 }
 
-void player_set_xy(uint16_t x, uint16_t y)
-{
-    player.point.x        = x;
-    player.point.y        = y;
-    player.sprite_head->x = x;
-    player.sprite_head->y = y;
-    player.sprite_body->x = x;
-    player.sprite_body->y = y + SPRITE_HEIGHT;
+void player_set_xy(uint16_t x, uint16_t y) {
+    point_set(&player.point, x, y);
+    sprite_set_xy(player.sprite_head, x, y);
+    sprite_set_xy(player.sprite_body, x, y + SPRITE_HEIGHT);
+}
+inline void player_set_point(Point *point) {
+    player_set_xy(point->x, point->y);
 }

@@ -42,7 +42,6 @@ void init(void);
 void deinit(void);
 void reset(void);
 uint8_t input(void);
-void clear_tilemap(uint8_t layer, uint8_t tile, uint8_t x, uint8_t y, uint16_t width, uint16_t height);
 
 void update(void);
 void draw_paused(uint8_t paused);

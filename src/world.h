@@ -1,5 +1,5 @@
 #include <zgdk/types.h>
-
+#include <zgdk/tilemap.h>
 #include "main.h"
 
 #ifndef WORLD_H
@@ -48,7 +48,7 @@ typedef enum {
     TILE_UNKNOWN = 255, // unknown, assume an obstruction
 } TileType;
 
-extern TileType SCREEN[ROOM_HEIGHT][ROOM_WIDTH];
+extern Tilemap SCREEN[ROOM_WIDTH * ROOM_HEIGHT];
 
 error world_init(gfx_context* ctx);
 void room_set_tile(const uint8_t x, const uint8_t y, const uint8_t tile);

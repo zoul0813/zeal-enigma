@@ -1,5 +1,6 @@
 #include <zvb_gfx.h>
 #include <zgdk/compress/rle.h>
+#include <zgdk/tilemap.h>
 
 #include "assets.h"
 #include "world.h"
@@ -74,7 +75,7 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
                 type = TILE_WALL;
             }
 
-            SCREEN[row][col] = type;
+            tilemap_set_xy(col, row, type);
             line[col] = tile;
         }
 
