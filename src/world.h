@@ -52,7 +52,7 @@ typedef enum {
 
 extern Tilemap SCREEN[ROOM_WIDTH * ROOM_HEIGHT];
 
-error world_init(gfx_context* ctx);
+error world_init(void);
 void room_set_tile(const uint8_t x, const uint8_t y, const uint8_t tile);
 
 void screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback);

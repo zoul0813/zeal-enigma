@@ -183,54 +183,62 @@ bool player_pickup(int16_t type) {
 }
 
 Edge player_collide(void) {
-    Tile edge_tile;
-    int16_t tile;
+    Tile head_edge_tile, body_edge_tile;
+    int16_t head_tile, body_tile;
+    Edge edge = EdgeNone;
+
+    Rect head_rect, body_rect;
+    rect_set(&head_rect, player.point.x, player.point.y, player.size.w, player.size.h);
+    rect_set(&body_rect, player.point.x, player.point.y, player.size.w, player.size.h);
+    body_rect.y += SPRITE_HEIGHT;
 
     if(player.direction.x < 0) {
-        if(tile_get_edge(&player.rect, EdgeLeft, &edge_tile)) {
-            tile = tilemap_get(&edge_tile.point);
-            if(tile < 0) {
+        if(tile_get_edge(&head_rect, EdgeLeft, &head_edge_tile) && tile_get_edge(&body_rect, EdgeLeft, &body_edge_tile)) {
+            head_tile = tilemap_get(&head_edge_tile.point);
+            body_tile = tilemap_get(&body_edge_tile.point);
+            if((head_tile < 0) | (body_tile < 0)) {
                 return EdgeLeft;
-            } else if(tile != TILE_NONE) {
-                if(!player_pickup(tile)) {
-                    player_set_xy(edge_tile.rect.x, player.point.y);
+            } else if((head_tile != 0) || (body_tile != 0)) {
+                if(!player_pickup(head_tile) && !player_pickup(body_tile)) {
+                    player_set_xy(head_edge_tile.rect.x, player.point.y);
                 }
             }
         } else {
             return EdgeLeft;
         }
     } else if(player.direction.x > 0) {
-        if(tile_get_edge(&player.rect, EdgeRight, &edge_tile)) {
-            tile = tilemap_get(&edge_tile.point);
-            if(tile < 0) {
+        if(tile_get_edge(&head_rect, EdgeRight, &head_edge_tile) && tile_get_edge(&body_rect, EdgeRight, &body_edge_tile)) {
+            head_tile = tilemap_get(&head_edge_tile.point);
+            body_tile = tilemap_get(&body_edge_tile.point);
+            if((head_tile < 0) | (body_tile < 0)) {
                 return EdgeRight;
-            } else if(tile != 0) {
-                if(!player_pickup(tile)) {
-                    player_set_xy(edge_tile.rect.x, player.point.y);
+            } else if((head_tile != 0) || (body_tile != 0)) {
+                if(!player_pickup(head_tile) && !player_pickup(body_tile)) {
+                    player_set_xy(head_edge_tile.rect.x, player.point.y);
                 }
             }
         }
     }
 
     if(player.direction.y < 0) {
-        if(tile_get_edge(&player.rect, EdgeTop, &edge_tile)) {
-            tile = tilemap_get(&edge_tile.point);
-            if(tile < 0) {
+        if(tile_get_edge(&head_rect, EdgeTop, &head_edge_tile)) {
+            head_tile = tilemap_get(&head_edge_tile.point);
+            if(head_tile < 0) {
                 return EdgeTop;
-            } else if(tile != TILE_NONE) {
-                if(!player_pickup(tile)) {
-                    player_set_xy(player.point.x, edge_tile.rect.y);
+            } else if(head_tile != TILE_NONE) {
+                if(!player_pickup(head_tile)) {
+                    player_set_xy(player.point.x, head_edge_tile.rect.y);
                 }
             }
         }
     } else if(player.direction.y > 0) {
-        if(tile_get_edge(&player.rect, EdgeBottom, &edge_tile)) {
-            tile = tilemap_get(&edge_tile.point);
-            if(tile < 0) {
+        if(tile_get_edge(&head_rect, EdgeBottom, &head_edge_tile) && tile_get_edge(&body_rect, EdgeBottom, &body_edge_tile)) {
+            body_tile = tilemap_get(&body_edge_tile.point);
+            if(body_tile < 0) {
                 return EdgeBottom;
-            } else if(tile != TILE_NONE) {
-                if(!player_pickup(tile)) {
-                    player_set_xy(player.point.x, edge_tile.rect.y);
+            } else if(body_tile != TILE_NONE) {
+                if(!player_pickup(body_tile)) {
+                    player_set_xy(player.point.x, head_edge_tile.rect.y);
                 }
             }
         }

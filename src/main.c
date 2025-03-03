@@ -132,7 +132,7 @@ void init(void)
     tilemap_fill(&vctx, LAYER1, RED_GREY, 0, 0, WIDTH, 4);
     tilemap_fill(&vctx, LAYER1, RED_YELLOW, 0, HEIGHT - 5, WIDTH, 5);
 
-    err = world_init(&vctx);
+    err = world_init();
     handle_error(err, "initialize world", 1);
 
 #if DEBUG
