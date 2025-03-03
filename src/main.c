@@ -9,6 +9,7 @@
 #include "main.h"
 #include "hud.h"
 #include "assets.h"
+#include "zar.h"
 #include "objects.h"
 #include "world.h"
 #include "player.h"
@@ -79,7 +80,7 @@ void init(void)
     tilemap_fill(&vctx, LAYER0, 0, 0, 0, WIDTH, HEIGHT); // clear all layer0 memory
     tilemap_fill(&vctx, LAYER1, 0, 0, 0, WIDTH, HEIGHT);
 
-    err = load_palette(&vctx, "tileset.ztp", 0);
+    err = load_palette(&vctx, ZAR_TILESET_ZTP, 0);
     handle_error(err, "load palette", 1);
 
     // err = gfx_tileset_add_color_tile(&vctx, EMPTY_TILE, 0);
@@ -91,32 +92,32 @@ void init(void)
         .pal_offset  = 0,
         .from_byte   = 0,
     };
-    err = load_tileset(&vctx, "tileset.zts", &options);
+    err = load_tileset(&vctx, ZAR_TILESET_ZTS, &options);
     handle_error(err, "load tileset.zts", 1);
 
     tile_offset       += 16;
     options.from_byte  = tile_offset * 128;
-    err                = load_tileset(&vctx, "player.zts", &options);
+    err                = load_tileset(&vctx, ZAR_PLAYER_ZTS, &options);
     handle_error(err, "load player.zts", 1);
 
     tile_offset       += 32;
     options.from_byte  = tile_offset * 128;
-    err                = load_tileset(&vctx, "enemies.zts", &options);
+    err                = load_tileset(&vctx, ZAR_ENEMIES_ZTS, &options);
     handle_error(err, "load enemies.zts", 1);
 
     tile_offset       += 32;
     options.from_byte  = tile_offset * 128;
-    err                = load_tileset(&vctx, "gates.zts", &options);
+    err                = load_tileset(&vctx, ZAR_GATES_ZTS, &options);
     handle_error(err, "load gates.zts", 1);
 
     tile_offset       += 32;
     options.from_byte  = tile_offset * 128;
-    err                = load_tileset(&vctx, "letters.zts", &options);
+    err                = load_tileset(&vctx, ZAR_LETTERS_ZTS, &options);
     handle_error(err, "load letters.zts", 1);
 
     tile_offset       += 32;
     options.from_byte  = tile_offset * 128;
-    err                = load_tileset(&vctx, "numbers.zts", &options);
+    err                = load_tileset(&vctx, ZAR_NUMBERS_ZTS, &options);
     handle_error(err, "load numbers.zts", 1);
 
     err = player_init();
@@ -160,7 +161,6 @@ void deinit(void)
 
     err = player_deinit();
     handle_error(err, "deinit player", 0);
-
 
     for(uint8_t y = 0; y < ROOM_HEIGHT; y++) {
         for(uint8_t x = 0; x < ROOM_WIDTH; x++) {
@@ -216,11 +216,11 @@ void update(void)
     bool player_moved = player_move();
     player_animate();
     if(player_moved) {
-        player_collide();
+        Edge map_edge = player_collide();
+        if (map_edge != EdgeNone) {
+            screen_transition(map_edge, player.point, player_set_xy);
+        }
     }
-    // if (screen_edge != EdgeNone) {
-    //     screen_transition(screen_edge, player.point, player_set_xy);
-    // }
 }
 
 void draw_paused(uint8_t paused)

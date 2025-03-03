@@ -5,6 +5,9 @@
 #include <zgdk/tilemap.h>
 #include <zgdk/tiles.h>
 
+#include <stdio.h>
+#include <zgdk/utils/print.h>
+
 #include "player.h"
 #include "bullet.h"
 #include "main.h"
@@ -41,6 +44,8 @@ error player_init(void)
     sprite.tile        = BODY_TILE(); // body is always header + 9
     player.sprite_body = sprites_register(sprite);
 
+
+    rect_set(&player.rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
     player_set_xy(WORLD_PLAYER_X, WORLD_PLAYER_Y);
     point_copy(&player.last_point, &player.point);
 
@@ -60,6 +65,8 @@ void player_animate(void) {
             frame_dir *= -1;
         }
     }
+
+    // TODO: when stop moving, display "idle" (standing) frame
 
     switch (player.direction.x) {
         case DIRECTION_LEFT:
@@ -118,88 +125,16 @@ bool player_move(void)
     return true;
 }
 
-Edge player_collide(void) {
-    Tile edge_tile;
-    if(player.direction.x < 0) {
-        if(tile_get_edge(&player.rect, EdgeLeft, &edge_tile)) {
-            tilemap_place(&vctx, LAYER1, 2, &edge_tile.point);
-            uint8_t tile = tilemap_get(&edge_tile.point);
-            if(tile != TILE_NONE) {
-                player_set_xy(edge_tile.rect.x, player.point.y);
-            }
-        }
-    } else if(player.direction.x > 0) {
-        if(tile_get_edge(&player.rect, EdgeRight, &edge_tile)) {
-            tilemap_place(&vctx, LAYER1, 2, &edge_tile.point);
-            uint8_t tile = tilemap_get(&edge_tile.point);
-            if(tile != 0) {
-                player_set_xy(edge_tile.rect.x, player.point.y);
-            }
-        }
-    }
 
-    if(player.direction.y < 0) {
-        if(tile_get_edge(&player.rect, EdgeTop, &edge_tile)) {
-            tilemap_place(&vctx, LAYER1, 2, &edge_tile.point);
-            uint8_t tile = tilemap_get(&edge_tile.point);
-            if(tile != TILE_NONE) {
-                player_set_xy(player.point.x, edge_tile.rect.y);
-            }
-        }
-    } else if(player.direction.y > 0) {
-        if(tile_get_edge(&player.rect, EdgeBottom, &edge_tile)) {
-            tilemap_place(&vctx, LAYER1, 2, &edge_tile.point);
-            uint8_t tile = tilemap_get(&edge_tile.point);
-            if(tile != TILE_NONE) {
-                player_set_xy(player.point.x, edge_tile.rect.y);
-            }
-        }
-    }
-
-    return EdgeNone;
-
-    uint16_t x  = player.point.x;
-    uint16_t y  = player.point.y;
-    Edge edge = EdgeNone;
-
-    // TODO: better tile x/y coordinate system?
-    uint8_t tx, ty;
-    tx = ((x) >> 4) - 1;
-    if (player.direction.x > 0)
-        tx++;
-    ty = ((y) >> 4) - 1;
-    if (player.direction.y > 0)
-        ty++;
-
-    TileType type_head = room_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y);
-    TileType type_body = room_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y + 1);
-
-
-    // check the head first
-    TileType type = type_head;
-    // if it's empty, try the body?
-    if(type == TILE_NONE) type = type_body;
-
-#if DEBUG
-    // type
-    sprintf(buffer, "%03d", type);
-    nprint_string_layer(&vctx, buffer, 3, LAYER0, 0, HEIGHT - 3);
-
-    // player x,y
-    sprintf(buffer, "%03d %03d", player.point.x, player.point.y);
-    nprint_string_layer(&vctx, buffer, 7, LAYER0, 0, HEIGHT - 2);
-
-    // screen x,y
-    sprintf(buffer, "%03d %03d", tx, ty);
-    nprint_string_layer(&vctx, buffer, 7, LAYER0, 0, HEIGHT - 1);
-#endif
-
+bool player_pickup(int16_t type) {
     switch (type) {
         case TILE_UNKNOWN: // fall thru
         case TILE_WALL:
-            // TODO: only block movement on the direction that has the block
-            // obstruction
-            return EdgeNone;
+            return false;
+    }
+
+    if ((type >= GATES_INDEX) && (type <= GATES_INDEX + gates_len)) {
+        return false;
     }
 
     if ((type >= KEYS_INDEX) && (type <= KEYS_INDEX + keys_len)) {
@@ -220,10 +155,7 @@ Edge player_collide(void) {
 
         hud_score(player.score);
         hud_keys(player.keys);
-    }
-
-    if ((type >= GATES_INDEX) && (type <= GATES_INDEX + gates_len)) {
-        return EdgeNone;
+        return true;
     }
 
     uint8_t roomId = ROOM_ID();
@@ -244,9 +176,62 @@ Edge player_collide(void) {
                 break;
             }
         }
+        return true;
     }
 
-    return edge;
+    return false;
+}
+
+Edge player_collide(void) {
+    Tile edge_tile;
+    int16_t tile;
+    if(player.direction.x < 0) {
+        if(tile_get_edge(&player.rect, EdgeLeft, &edge_tile)) {
+            tile = tilemap_get(&edge_tile.point);
+            if(tile < 0) {
+                return EdgeLeft;
+            } else if(tile != TILE_NONE) {
+                if(!player_pickup(tile))
+                    player_set_xy(edge_tile.rect.x, player.point.y);
+            }
+        } else {
+            return EdgeLeft;
+        }
+    } else if(player.direction.x > 0) {
+        if(tile_get_edge(&player.rect, EdgeRight, &edge_tile)) {
+            tile = tilemap_get(&edge_tile.point);
+            if(tile < 0) {
+                return EdgeRight;
+            } else if(tile != 0) {
+                if(!player_pickup(tile))
+                    player_set_xy(edge_tile.rect.x, player.point.y);
+            }
+        }
+    }
+
+    if(player.direction.y < 0) {
+        if(tile_get_edge(&player.rect, EdgeTop, &edge_tile)) {
+            tile = tilemap_get(&edge_tile.point);
+            if(tile < 0) {
+                return EdgeTop;
+            } else if(tile != TILE_NONE) {
+                if(!player_pickup(tile))
+                    player_set_xy(player.point.x, edge_tile.rect.y);
+            }
+        }
+    } else if(player.direction.y > 0) {
+        if(tile_get_edge(&player.rect, EdgeBottom, &edge_tile)) {
+            tile = tilemap_get(&edge_tile.point);
+            if(tile < 0) {
+                return EdgeBottom;
+            } else if(tile != TILE_NONE) {
+                if(!player_pickup(tile))
+                    player_set_xy(player.point.x, edge_tile.rect.y);
+            }
+        }
+    }
+
+    return EdgeNone;
 }
 
 void player_set_xy(uint16_t x, uint16_t y) {
@@ -254,6 +239,7 @@ void player_set_xy(uint16_t x, uint16_t y) {
     sprite_set_xy(player.sprite_head, x, y);
     sprite_set_xy(player.sprite_body, x, y + SPRITE_HEIGHT);
 }
+
 inline void player_set_point(Point *point) {
     player_set_xy(point->x, point->y);
 }

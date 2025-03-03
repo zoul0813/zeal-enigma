@@ -17,8 +17,8 @@ zos_err_t load_asset_file(const char *path) {
     return err;
 }
 
-zos_err_t load_palette(gfx_context* ctx, const char *path, uint8_t from) {
-    zos_err_t err = zar_file_entry_from_name(&zar_file, path, &entry);
+zos_err_t load_palette(gfx_context* ctx, uint8_t index, uint8_t from) {
+    zos_err_t err = zar_file_entry_from_index(&zar_file, index, &entry);
     if(err != ERR_SUCCESS) return err | 0xC0;
 
     uint16_t size = entry.size;
@@ -36,8 +36,8 @@ zos_err_t load_palette(gfx_context* ctx, const char *path, uint8_t from) {
     return err;
 }
 
-zos_err_t load_tileset(gfx_context* ctx, const char *path, gfx_tileset_options* options) {
-    zos_err_t err = zar_file_entry_from_name(&zar_file, path, &entry);
+zos_err_t load_tileset(gfx_context* ctx, uint8_t index, gfx_tileset_options* options) {
+    zos_err_t err = zar_file_entry_from_index(&zar_file, index, &entry);
     if(err != ERR_SUCCESS) return err | 0xC0;
 
     uint16_t size = entry.size;

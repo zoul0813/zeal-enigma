@@ -81,7 +81,7 @@ void bullet_move(void)
             if (bullet->direction.y > 0)
                 ty++;
 
-            TileType type = room_get_tile(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y);
+            TileType type = tilemap_get_xy(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y);
             if(type != TILE_NONE) {
                 // hit something
                 bullet_destroy(bullet);

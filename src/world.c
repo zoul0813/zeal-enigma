@@ -98,11 +98,8 @@ void room_set_tile(uint8_t x, uint8_t y, uint8_t tile)
         return;
 
     // place tile on screen
-    gfx_tilemap_place(&vctx, tile, LAYER0, ROOM_OFFSET_X + x, ROOM_OFFSET_Y + y);
+    tilemap_place_xy(&vctx, LAYER0, tile, ROOM_OFFSET_X + x, ROOM_OFFSET_Y + y);
     tilemap_set_xy(x, y, TILE_NONE);
-
-    // // place tile into world
-    // data[(y * WIDTH) + x] = tile;
 }
 
 /** WORLD FUNCTIONS */
@@ -163,38 +160,6 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
         case EdgeBottom: callback(point.x, ROOM_TOP_PX + SPRITE_HEIGHT); break;
     }
     gfx_wait_end_vblank(&vctx);
-}
-
-TileType screen_get_tile(Point* point, Edge edge)
-{
-    // convert screen x/y into tile x/y
-    uint8_t tx, ty, tile;
-    tx = (point->x - ROOM_LEFT_PX) >> 4;
-    ty = (point->y - ROOM_TOP_PX) >> 4;
-
-    // look for tile on edge?
-    if (edge == EdgeLeft)
-        tx--;
-    // if (edge == EdgeRight)
-    //     tx+=2;
-    if (edge == EdgeTop)
-        ty--;
-    // if (edge == EdgeBottom)
-    //     ty+=2;
-
-    tile = tilemap_get_xy(tx, ty);
-
-    return tile;
-}
-
-TileType room_get_tile(const uint8_t x, const uint8_t y)
-{
-    // out of bounds, assume TILE_NONE
-    if (x >= ROOM_WIDTH)
-        return TILE_NONE;
-    if (y > ROOM_HEIGHT - 1)
-        return TILE_NONE;
-    return tilemap_get_xy(x, y);
 }
 
 /**

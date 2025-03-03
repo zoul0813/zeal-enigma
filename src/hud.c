@@ -8,11 +8,11 @@
 
 void hud_init(void)
 {
-    sprintf(buffer, "1985 Enigma by CBM UK Ltd");
-    nprint_string_layer(&vctx, buffer, 25, LAYER0, 2, 0);
+    // sprintf(buffer, "1985 Enigma by CBM UK Ltd");
+    // nprint_string_layer(&vctx, buffer, 25, LAYER0, 2, 0);
 
-    sprintf(buffer, "2025 Port for Zeal 8-bit Computer");
-    nprint_string_layer(&vctx, buffer, 33, LAYER0, 2, 1);
+    // sprintf(buffer, "2025 Port for Zeal 8-bit Computer");
+    // nprint_string_layer(&vctx, buffer, 33, LAYER0, 2, 1);
 
     sprintf(buffer, "Code: zoul0813 Graphics: arcadia6502");
     nprint_string_layer(&vctx, buffer, 36, LAYER0, 2, 2);

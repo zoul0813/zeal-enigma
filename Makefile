@@ -100,6 +100,8 @@ TILED_LAYER=3
 TILED_OUTPUT=assets/archive/__room.map
 ASSETS_INPUT=assets
 ASSETS_OUTPUT=assets/archive
+ZAR_ARCHIVE=enigma.zar
+ZAR_HEADER=src/zar.h
 
 all:: clean-assets
 
@@ -107,10 +109,5 @@ include $(ZGDK_PATH)/base_sdcc.mk
 
 ## Add your own rules here
 
-all::
-	mkdir -p assets/archive
-	$(ZAR_PATH)/zar.py -i assets/archive -o bin/enigma.zar
-	ls -l bin/enigma.zar
-
 clean-assets:
-	rm -rf assets/archive
+	rm -rf $(ASSETS_OUTPUT)

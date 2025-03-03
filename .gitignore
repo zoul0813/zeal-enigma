@@ -3,5 +3,7 @@ bin/
 release/
 tmp/
 assets/*.zt[spm]
+*.zar
+src/zar.h
 assets/archive/
 *.tiled-session
