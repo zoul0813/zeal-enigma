@@ -75,8 +75,8 @@ void enemies_spawn(uint8_t roomId)
             type = tilemap_get_xy(x, y);
         } while (type != TILE_NONE);
 
-        sprintf(buffer, "%03d %03d %02d", x, y, type);
-        nprint_string_layer(&vctx, buffer, 10, LAYER0, WIDTH - 10, HEIGHT - 1);
+        // sprintf(buffer, "%03d %03d %02d", x, y, type);
+        // nprint_string_layer(&vctx, buffer, 10, LAYER0, WIDTH - 10, HEIGHT - 1);
 
         px = x * SPRITE_WIDTH;
         py = y * SPRITE_HEIGHT;

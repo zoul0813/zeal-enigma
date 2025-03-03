@@ -112,16 +112,9 @@ error world_init(gfx_context* ctx)
     // load the screen the player starts on
     world_position.x = WORLD_START_X;
     world_position.y = WORLD_START_Y;
-    room_set_palette();
-    zos_err_t err = load_tilemap(ctx, world_position.x, world_position.y, 0, 0);
 
-    if (err != ERR_SUCCESS)
-        return err;
-
-    room_render_keys();
-    room_render_fuel();
-    room_render_gate();
-    enemies_spawn(ROOM_ID());
+    Point point;
+    screen_load(world_position, EdgeNone, point, NULL);
 
     tilemap_scroll_x(0, 0);
     return ERR_SUCCESS;
@@ -153,11 +146,13 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
     nprint_string_layer(&vctx, buffer, 2, LAYER0, 0, HEIGHT - 1);
 
     gfx_wait_vblank(&vctx);
-    switch (edge) {
-        case EdgeLeft: callback(ROOM_RIGHT_PX, point.y); break;
-        case EdgeRight: callback(ROOM_LEFT_PX + SPRITE_WIDTH, point.y); break;
-        case EdgeTop: callback(point.x, ROOM_BOTTOM_PX - SPRITE_HEIGHT); break;
-        case EdgeBottom: callback(point.x, ROOM_TOP_PX + SPRITE_HEIGHT); break;
+    if(callback != NULL) {
+        switch (edge) {
+            case EdgeLeft: callback(ROOM_RIGHT_PX, point.y); break;
+            case EdgeRight: callback(ROOM_LEFT_PX + SPRITE_WIDTH, point.y); break;
+            case EdgeTop: callback(point.x, ROOM_BOTTOM_PX - SPRITE_HEIGHT); break;
+            case EdgeBottom: callback(point.x, ROOM_TOP_PX + SPRITE_HEIGHT); break;
+        }
     }
     gfx_wait_end_vblank(&vctx);
 }

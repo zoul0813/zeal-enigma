@@ -133,15 +133,15 @@ bool player_pickup(int16_t type) {
             return false;
     }
 
-    if ((type >= GATES_INDEX) && (type <= GATES_INDEX + gates_len)) {
+    if ((type >= GATES_INDEX) && (type <= (GATES_INDEX + keys_len))) {
         return false;
     }
 
-    if ((type >= KEYS_INDEX) && (type <= KEYS_INDEX + keys_len)) {
+    if ((type >= KEYS_INDEX) && (type <= (KEYS_INDEX + keys_len))) {
         uint8_t value = type - KEYS_INDEX;
-        object_t* key = &keys[value];
-        key->flags    = OBJECT_INACTIVE;
-        room_set_tile(key->x, key->y, TILE_NONE); // make it a ground tile
+        object_t* obj = &keys[value];
+        obj->flags    = OBJECT_INACTIVE;
+        room_set_tile(obj->x, obj->y, TILE_NONE); // make it a ground tile
 
         player.score += 5000; /// 5,000 for keys
         player.keys  |= (1 << value);
@@ -161,12 +161,12 @@ bool player_pickup(int16_t type) {
     uint8_t roomId = ROOM_ID();
 
     if (type == FUEL_INDEX) {
-        object_t* can;
+        object_t* obj;
         for (uint8_t i = 0; i < fuel_len; i++) {
-            can = &fuel[i];
-            if (can->room == roomId) {
-                can->flags = OBJECT_INACTIVE;
-                room_set_tile(can->x, can->y, TILE_NONE); // make it a ground tile
+            obj = &fuel[i];
+            if (obj->room == roomId) {
+                obj->flags = OBJECT_INACTIVE;
+                room_set_tile(obj->x, obj->y, TILE_NONE); // make it a ground tile
 
                 player.energy += FUEL_VALUE;
                 if (player.energy > MAX_ENERGY)
@@ -185,14 +185,16 @@ bool player_pickup(int16_t type) {
 Edge player_collide(void) {
     Tile edge_tile;
     int16_t tile;
+
     if(player.direction.x < 0) {
         if(tile_get_edge(&player.rect, EdgeLeft, &edge_tile)) {
             tile = tilemap_get(&edge_tile.point);
             if(tile < 0) {
                 return EdgeLeft;
             } else if(tile != TILE_NONE) {
-                if(!player_pickup(tile))
+                if(!player_pickup(tile)) {
                     player_set_xy(edge_tile.rect.x, player.point.y);
+                }
             }
         } else {
             return EdgeLeft;
@@ -203,8 +205,9 @@ Edge player_collide(void) {
             if(tile < 0) {
                 return EdgeRight;
             } else if(tile != 0) {
-                if(!player_pickup(tile))
+                if(!player_pickup(tile)) {
                     player_set_xy(edge_tile.rect.x, player.point.y);
+                }
             }
         }
     }
@@ -215,8 +218,9 @@ Edge player_collide(void) {
             if(tile < 0) {
                 return EdgeTop;
             } else if(tile != TILE_NONE) {
-                if(!player_pickup(tile))
+                if(!player_pickup(tile)) {
                     player_set_xy(player.point.x, edge_tile.rect.y);
+                }
             }
         }
     } else if(player.direction.y > 0) {
@@ -225,8 +229,9 @@ Edge player_collide(void) {
             if(tile < 0) {
                 return EdgeBottom;
             } else if(tile != TILE_NONE) {
-                if(!player_pickup(tile))
+                if(!player_pickup(tile)) {
                     player_set_xy(player.point.x, edge_tile.rect.y);
+                }
             }
         }
     }
