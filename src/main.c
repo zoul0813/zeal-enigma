@@ -218,6 +218,8 @@ void update(void)
     if(player_moved) {
         Edge map_edge = player_collide();
         if (map_edge != EdgeNone) {
+            bullets_clear();
+            draw();
             screen_transition(map_edge, player.point, player_set_xy);
         }
     }

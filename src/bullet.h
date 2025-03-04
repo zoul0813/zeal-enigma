@@ -24,5 +24,7 @@ extern bullet_t BULLETS[MAX_BULLETS];
 error bullet_init(void);
 void bullet_move(void);
 uint8_t bullet_shoot(Point *point, Direction *direction);
+void bullet_destroy(bullet_t *bullet);
+void bullets_clear(void);
 
 #endif

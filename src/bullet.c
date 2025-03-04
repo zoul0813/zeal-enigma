@@ -28,6 +28,12 @@ void bullet_destroy(bullet_t *bullet) {
     bullet->sprite->tile = BULLET_INACTIVE;
 }
 
+void bullets_clear(void) {
+    for(uint8_t i = 0; i < MAX_BULLETS; i++) {
+        bullet_destroy(&BULLETS[i]);
+    }
+}
+
 void bullet_move(void)
 {
     uint8_t i, j;
