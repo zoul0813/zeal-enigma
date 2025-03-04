@@ -56,8 +56,8 @@ void enemies_spawn(uint8_t roomId)
         for(uint8_t col = 0; col < ROOM_WIDTH; col++) {
             uint8_t tile = tilemap_get_xy(row, col);
             if(tile == TILE_NONE) {
-                validSpawn[spawns].x = col;
-                validSpawn[spawns].y = row;
+                validSpawn[spawns].x = col + ROOM_OFFSET_X;
+                validSpawn[spawns].y = row + ROOM_OFFSET_Y;
                 spawns++;
             }
         }
@@ -67,23 +67,25 @@ void enemies_spawn(uint8_t roomId)
     for(i = 0; i < count; i++) {
         enemy_t* enemy = &ENEMIES[i];
         r = rand8() % spawns;
-        while(validSpawn[r].x != 0xFF) {
+        while(validSpawn[r].x == 0xFF) {
             r++;
             if(r >= spawns) r = 0;
         }
 
-        Tile tile;
-        tile_at(validSpawn[r].x, validSpawn[r].y, &tile);
+        Tile tile_l, tile_r;
+        tile_at(validSpawn[r].x, validSpawn[r].y, &tile_l);
+        tile_at(validSpawn[r].x + 1, validSpawn[r].y, &tile_r);
 
         validSpawn[r].x = 0xFF; // mark the spot as occupied
 
         r &= 0x07;
         if(r > 4) r -= 4;
-        enemy->sprite_l->tile = r;
-        enemy->sprite_r->tile = r + 1;
+        r *= 4;
+        enemy->sprite_l->tile = ENEMY_INDEX + r;
+        enemy->sprite_r->tile = ENEMY_INDEX + r + 1;
 
-        sprite_set_xy(enemy->sprite_l, tile.rect.point.x, tile.rect.point.y);
-        sprite_set_xy(enemy->sprite_r, tile.rect.point.x + SPRITE_WIDTH, tile.rect.point.y);
+        sprite_set_point(enemy->sprite_l, &tile_l.rect.point);
+        sprite_set_point(enemy->sprite_r, &tile_r.rect.point);
     }
 
     for (i = count; i < MAX_ENEMIES; i++) {
