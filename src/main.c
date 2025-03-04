@@ -211,7 +211,7 @@ uint8_t input(void)
 void update(void)
 {
     bullet_move();
-    enemies_move();
+    // enemies_move();
 
     bool player_moved = player_move();
     player_animate();

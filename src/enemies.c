@@ -3,8 +3,11 @@
 
 #include <zgdk/types.h>
 #include <zgdk/sprites.h>
+#include <zgdk/tiles.h>
+#include <zgdk/tilemap.h>
 #include <zgdk/utils/rand.h>
 
+#include "assets.h"
 #include "enemies.h"
 #include "world.h"
 
@@ -46,61 +49,46 @@ void enemies_spawn(uint8_t roomId)
     if(roomId >= sizeof(ENEMY_ROOMS)) return;
 
     uint8_t count = ENEMY_ROOMS[roomId];
+    uint8_t* validSpawn = data;  // Use flat array
 
-    uint8_t i, r1, r2, r, offset;
-    uint8_t x, y;
-    uint16_t px, py;
-    TileType type;
-    for (i = 0; i < count; i++) {
+    uint16_t spawns = 0;
+    for(uint8_t row = 0; row < ROOM_HEIGHT; row++) {
+        for(uint8_t col = 0; col < ROOM_WIDTH; col++) {
+            uint8_t tile = tilemap_get_xy(row, col);
+            if(tile == TILE_NONE) {
+                validSpawn[spawns * 2] = col;
+                validSpawn[spawns * 2 + 1] = row;
+                spawns++;
+            }
+        }
+    }
+
+    uint8_t i, r;
+    for(i = 0; i < count; i++) {
         enemy_t* enemy = &ENEMIES[i];
+        r = rand8() % spawns;
+        while(validSpawn[r * 2] != 0xFF) {
+            r++;
+            if(r >= spawns) r = 0;
+        }
 
-        do {
-            // get two random nunmbers
-            r1 = rand8();
-            r2 = rand8();
+        Tile tile;
+        tile_at(validSpawn[r * 2], validSpawn[r * 2 + 1], &tile);
 
-            // low + high nibble, convert to 5-bit
-            r = ((r1 & 0x0F) | (r2 & 0xF0)) >> 3; // 0..31 (ROOM_WIDTH - 8)
-            x = r;
-            // offset by 4 tiles on either side (8)
-            x += ROOM_OFFSET_X + 4;
+        validSpawn[r * 2] = 0xFF; // mark the spot as occupied
 
-            // low + high nibble, convert to 5-bit
-            r = ((r2 & 0x0F) | (r1 & 0xF0)) >> 3; // 0..31
-            // limit the value between the boundaries
-            y = (r % (ROOM_HEIGHT - 8));
-            // offset by 2 tiles on either side (4)
-            y += ROOM_OFFSET_Y + 4;
+        r &= 0x07;
+        if(r > 4) r -= 4;
+        enemy->sprite_l->tile = r;
+        enemy->sprite_r->tile = r + 1;
 
-            type = tilemap_get_xy(x, y);
-        } while (type != TILE_NONE);
-
-        // sprintf(buffer, "%03d %03d %02d", x, y, type);
-        // nprint_string_layer(&vctx, buffer, 10, LAYER0, WIDTH - 10, HEIGHT - 1);
-
-        px = x * SPRITE_WIDTH;
-        py = y * SPRITE_HEIGHT;
-
-
-        offset = (((r1 & 0x0F) | (r2 >> 4))) & 0x03;
-        if(r1 > 127) offset++;
-
-        offset = (offset * 2) + ENEMY_INDEX;
-
-        enemy->sprite_l->tile = offset;
-        enemy->sprite_r->tile = offset + 1;
-        enemy->sprite_l->x    = px;
-        enemy->sprite_l->y    = py;
-        enemy->sprite_r->x    = px + SPRITE_WIDTH;
-        enemy->sprite_r->y    = py;
+        sprite_set_xy(enemy->sprite_l, tile.rect.point.x, tile.rect.point.y);
+        sprite_set_xy(enemy->sprite_r, tile.rect.point.x + SPRITE_WIDTH, tile.rect.point.y);
     }
 
     for (i = count; i < MAX_ENEMIES; i++) {
         enemy_t* enemy        = &ENEMIES[i];
-        enemy->sprite_l->tile = ENEMY_INACTIVE;
-        enemy->sprite_r->tile = ENEMY_INACTIVE;
-        enemy->sprite_l->x    = SCREEN_WIDTH + SPRITE_WIDTH;
-        enemy->sprite_r->x    = SCREEN_WIDTH + SPRITE_WIDTH;
+        enemy_destroy(enemy);
     }
 }
 
