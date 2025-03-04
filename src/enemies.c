@@ -47,17 +47,19 @@ error enemies_init(void)
 void enemies_spawn(uint8_t roomId)
 {
     if(roomId >= sizeof(ENEMY_ROOMS)) return;
-
     uint8_t count = ENEMY_ROOMS[roomId];
+    if(count < 1) return; // no enemies to spawn
+
     Vector2_u8* validSpawn = (Vector2_u8*)data;  // Use flat array
 
     uint16_t spawns = 0;
     for(uint8_t row = 0; row < ROOM_HEIGHT; row++) {
         for(uint8_t col = 0; col < ROOM_WIDTH; col++) {
-            uint8_t tile = tilemap_get_xy(row, col);
+            uint8_t tile = tilemap_get_xy(col, row);
             if(tile == TILE_NONE) {
                 validSpawn[spawns].x = col + ROOM_OFFSET_X;
                 validSpawn[spawns].y = row + ROOM_OFFSET_Y;
+                // room_set_tile(col, row, 112);
                 spawns++;
             }
         }
