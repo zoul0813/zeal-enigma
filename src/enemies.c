@@ -49,15 +49,15 @@ void enemies_spawn(uint8_t roomId)
     if(roomId >= sizeof(ENEMY_ROOMS)) return;
 
     uint8_t count = ENEMY_ROOMS[roomId];
-    uint8_t* validSpawn = data;  // Use flat array
+    Vector2_u8* validSpawn = (Vector2_u8*)data;  // Use flat array
 
     uint16_t spawns = 0;
     for(uint8_t row = 0; row < ROOM_HEIGHT; row++) {
         for(uint8_t col = 0; col < ROOM_WIDTH; col++) {
             uint8_t tile = tilemap_get_xy(row, col);
             if(tile == TILE_NONE) {
-                validSpawn[spawns * 2] = col;
-                validSpawn[spawns * 2 + 1] = row;
+                validSpawn[spawns].x = col;
+                validSpawn[spawns].y = row;
                 spawns++;
             }
         }
@@ -67,15 +67,15 @@ void enemies_spawn(uint8_t roomId)
     for(i = 0; i < count; i++) {
         enemy_t* enemy = &ENEMIES[i];
         r = rand8() % spawns;
-        while(validSpawn[r * 2] != 0xFF) {
+        while(validSpawn[r].x != 0xFF) {
             r++;
             if(r >= spawns) r = 0;
         }
 
         Tile tile;
-        tile_at(validSpawn[r * 2], validSpawn[r * 2 + 1], &tile);
+        tile_at(validSpawn[r].x, validSpawn[r].y, &tile);
 
-        validSpawn[r * 2] = 0xFF; // mark the spot as occupied
+        validSpawn[r].x = 0xFF; // mark the spot as occupied
 
         r &= 0x07;
         if(r > 4) r -= 4;
