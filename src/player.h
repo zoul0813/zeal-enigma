@@ -15,17 +15,7 @@
 #define MAX_SCORE      (99999999U)
 
 typedef struct {
-        union {
-                Rect rect;
-                struct {
-                        Point point;
-                        Size size;
-                };
-        };
-
-        Point last_point;
-
-        Direction direction;
+        Moveable(moveable);
 
         uint8_t lives;
         uint8_t energy;

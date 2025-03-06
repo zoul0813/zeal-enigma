@@ -37,18 +37,22 @@ error enemies_init(void)
         enemy_t* enemy   = &ENEMIES[i];
         enemy->sprite_l  = sprites_register(sprite);
         enemy->sprite_r  = sprites_register(sprite);
-        enemy->direction.x = DIRECTION_LEFT;
-        enemy->direction.y = DIRECTION_DOWN;
+
+        vect_set(enemy->direction, DIRECTION_NONE, DIRECTION_NONE);
+        rect_set(&enemy->rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+        enemy_set_xy(enemy, WORLD_PLAYER_X, WORLD_PLAYER_Y);
+        point_copy(&enemy->last_point, &enemy->point);
     }
 
     return GFX_SUCCESS;
 }
 
+static uint8_t enemy_count = 0;
 void enemies_spawn(uint8_t roomId)
 {
     if(roomId >= sizeof(ENEMY_ROOMS)) return;
-    uint8_t count = ENEMY_ROOMS[roomId];
-    if(count < 1) return; // no enemies to spawn
+    enemy_count = ENEMY_ROOMS[roomId];
+    if(enemy_count < 1) return; // no enemies to spawn
 
     Vector2_u8* validSpawn = (Vector2_u8*)data;  // Use flat array
 
@@ -66,7 +70,7 @@ void enemies_spawn(uint8_t roomId)
     }
 
     uint8_t i, r;
-    for(i = 0; i < count; i++) {
+    for(i = 0; i < enemy_count; i++) {
         enemy_t* enemy = &ENEMIES[i];
         r = rand8() % spawns;
         while(validSpawn[r].x == 0xFF) {
@@ -74,9 +78,9 @@ void enemies_spawn(uint8_t roomId)
             if(r >= spawns) r = 0;
         }
 
-        Tile tile_l, tile_r;
+        Tile tile_l; //, tile_r;
         tile_at(validSpawn[r].x, validSpawn[r].y, &tile_l);
-        tile_at(validSpawn[r].x + 1, validSpawn[r].y, &tile_r);
+        // tile_at(validSpawn[r].x + 1, validSpawn[r].y, &tile_r);
 
         validSpawn[r].x = 0xFF; // mark the spot as occupied
 
@@ -86,65 +90,117 @@ void enemies_spawn(uint8_t roomId)
         enemy->sprite_l->tile = ENEMY_INDEX + r;
         enemy->sprite_r->tile = ENEMY_INDEX + r + 1;
 
-        sprite_set_point(enemy->sprite_l, &tile_l.rect.point);
-        sprite_set_point(enemy->sprite_r, &tile_r.rect.point);
+        enemy_set_point(enemy, &tile_l.rect.point);
+
+        // sprite_set_point(enemy->sprite_l, &tile_l.rect.point);
+        // sprite_set_point(enemy->sprite_r, &tile_r.rect.point);
     }
 
-    for (i = count; i < MAX_ENEMIES; i++) {
+    for (i = enemy_count; i < MAX_ENEMIES; i++) {
         enemy_t* enemy        = &ENEMIES[i];
         enemy_destroy(enemy);
     }
 }
 
-void enemies_move(void) {
+static uint8_t enemy_last_moved = 0;
+void enemies_move(Point *player_point) {
+    enemy_last_moved++;
+    if(enemy_last_moved >= enemy_count) enemy_last_moved = 0;
+
     uint8_t i;
-
-    uint16_t x, y;
-    uint8_t tx, ty;
-    for(i = 0; i < MAX_ENEMIES; i++) {
-        enemy_t *enemy = &ENEMIES[i];
-        if(enemy->sprite_l->tile == ENEMY_INACTIVE) continue;
-
-        x = enemy->sprite_l->x;
-        y = enemy->sprite_l->y;
-
-        x += enemy->direction.x * ENEMY_SPEED;
-        y += enemy->direction.y * ENEMY_SPEED;
-
-        if(x < ROOM_LEFT_PX + SPRITE_WIDTH) {
-            x = ROOM_LEFT_PX + SPRITE_WIDTH + 1;
-            enemy->direction.x *= -1;
+    enemy_t *enemy = NULL;
+    for(i = enemy_last_moved; i < enemy_count; i++) {
+        if(ENEMIES[i].sprite_l->tile != ENEMY_INACTIVE) {
+            enemy = &ENEMIES[i];
+            break;
         }
-        if(x > ROOM_RIGHT_PX - SPRITE_WIDTH) {
-            x = ROOM_RIGHT_PX - SPRITE_WIDTH - 1;
-            enemy->direction.x *= -1;
-        }
-
-        if(y < ROOM_TOP_PX + SPRITE_HEIGHT) {
-            y = ROOM_TOP_PX + SPRITE_HEIGHT + 1;
-            enemy->direction.y *= -1;
-        }
-
-        if(y > ROOM_BOTTOM_PX - SPRITE_WIDTH) {
-            y = ROOM_BOTTOM_PX - SPRITE_WIDTH - 1;
-            enemy->direction.y *= -1;
-        }
-
-        tx = ((x + 8) >> 4) - 1;
-        if(enemy->direction.x > 0)
-            tx++;
-        ty = ((y + 8) >> 4) - 1;
-        if(enemy->direction.y > 0)
-            ty++;
-        TileType type = tilemap_get_xy(tx, ty);
-        if(type != TILE_NONE) {
-            enemy->direction.x *= -1;
-            enemy->direction.y *= -1;
-        }
-
-        sprite_set_xy(enemy->sprite_l, x, y);
-        sprite_set_xy(enemy->sprite_r, x + SPRITE_WIDTH, y);
     }
+
+    enemy_last_moved = i;
+    if(enemy == NULL) return;
+
+    vect_direction(&enemy->direction, player_point, &enemy->point);
+    point_copy(&enemy->last_point, &enemy->point);
+
+    // can't move
+    if(enemy->direction.x == 0 && enemy->direction.y == 0) return;
+
+    uint16_t x  = enemy->point.x;
+    uint16_t y  = enemy->point.y;
+    x          += (enemy->direction.x * ENEMY_SPEED);
+    y          += (enemy->direction.y * ENEMY_SPEED);
+
+    if (x < SPRITE_WIDTH)
+        x = SPRITE_WIDTH;
+    else if (x > SCREEN_WIDTH)
+        x = SCREEN_WIDTH;
+    if (y < SPRITE_HEIGHT)
+        y = SPRITE_HEIGHT;
+    else if (y > SCREEN_HEIGHT)
+        y = SCREEN_HEIGHT;
+
+    // didn't move
+    if((x == enemy->point.x) && (y == enemy->point.y)) return;
+
+    enemy_set_xy(enemy, x, y);
+    enemy_collide(enemy);
+}
+
+Edge enemy_collide(enemy_t *enemy) {
+    Tile left_edge_tile, right_edge_tile;
+    int16_t left_tile, right_tile;
+    Edge edge = EdgeNone;
+
+    Rect left_rect, right_rect;
+    rect_set(&left_rect, enemy->point.x, enemy->point.y, enemy->size.w, enemy->size.h);
+    rect_set(&right_rect, enemy->point.x, enemy->point.y, enemy->size.w, enemy->size.h);
+    right_rect.x += SPRITE_WIDTH;
+
+    if(enemy->direction.x < 0) {
+        if(tile_get_edge(&left_rect, EdgeLeft, &left_edge_tile)) {
+            left_tile = tilemap_get(&left_edge_tile.point);
+            if((left_tile < 0)) {
+                return EdgeLeft;
+            } else if((left_tile != 0)) {
+                enemy_set_xy(enemy, left_edge_tile.rect.x, enemy->point.y);
+            }
+        } else {
+            return EdgeLeft;
+        }
+    } else if(enemy->direction.x > 0) {
+        if(tile_get_edge(&right_rect, EdgeRight, &right_edge_tile)) {
+            right_tile = tilemap_get(&right_edge_tile.point);
+            if((right_tile < 0)) {
+                return EdgeRight;
+            } else if((right_tile != 0)) {
+                enemy_set_xy(enemy, left_edge_tile.rect.x, enemy->point.y);
+            }
+        }
+    }
+
+    if(enemy->direction.y < 0) {
+        if(tile_get_edge(&left_rect, EdgeTop, &left_edge_tile) && tile_get_edge(&right_rect, EdgeTop, &right_edge_tile)) {
+            left_tile = tilemap_get(&left_edge_tile.point);
+            right_tile = tilemap_get(&right_edge_tile.point);
+            if((left_tile < 0) | (right_tile < 0)) {
+                return EdgeTop;
+            } else if((left_tile != TILE_NONE) || (right_tile != TILE_NONE)) {
+                enemy_set_xy(enemy, enemy->point.x, left_edge_tile.rect.y);
+            }
+        }
+    } else if(enemy->direction.y > 0) {
+        if(tile_get_edge(&left_rect, EdgeBottom, &left_edge_tile) && tile_get_edge(&right_rect, EdgeBottom, &right_edge_tile)) {
+            left_tile = tilemap_get(&left_edge_tile.point);
+            right_tile = tilemap_get(&right_edge_tile.point);
+            if((left_tile < 0) | (right_tile < 0)) {
+                return EdgeBottom;
+            } else if((left_tile != TILE_NONE) || (right_tile != TILE_NONE)) {
+                enemy_set_xy(enemy, enemy->point.x, left_edge_tile.rect.y);
+            }
+        }
+    }
+
+    return EdgeNone;
 }
 
 void enemy_destroy(enemy_t *enemy) {
@@ -152,4 +208,14 @@ void enemy_destroy(enemy_t *enemy) {
     enemy->sprite_r->tile = ENEMY_INACTIVE;
     enemy->sprite_l->x = SCREEN_WIDTH + SPRITE_WIDTH;
     enemy->sprite_r->x = SCREEN_WIDTH + SPRITE_WIDTH;
+}
+
+void enemy_set_xy(enemy_t *enemy, uint16_t x, uint16_t y) {
+    point_set(&enemy->point, x, y);
+    sprite_set_xy(enemy->sprite_l, x, y);
+    sprite_set_xy(enemy->sprite_r, x + SPRITE_WIDTH, y);
+}
+
+inline void enemy_set_point(enemy_t *enemy, Point *point) {
+    enemy_set_xy(enemy, point->x, point->y);
 }

@@ -32,9 +32,6 @@ error player_init(void)
     player.lives  = 3;
     player.keys   = 0;
 
-    player.direction.x = 0;
-    player.direction.y = 0;
-
     gfx_sprite sprite = {
         .tile  = PLAYER_TILE + frame_offset,
         .flags = SPRITE_NONE,
@@ -45,6 +42,7 @@ error player_init(void)
     player.sprite_body = sprites_register(sprite);
 
 
+    vect_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
     rect_set(&player.rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
     player_set_xy(WORLD_PLAYER_X, WORLD_PLAYER_Y);
     point_copy(&player.last_point, &player.point);
@@ -198,7 +196,7 @@ Edge player_collide(void) {
             body_tile = tilemap_get(&body_edge_tile.point);
             if((head_tile < 0) | (body_tile < 0)) {
                 return EdgeLeft;
-            } else if((head_tile != 0) || (body_tile != 0)) {
+            } else if((head_tile != TILE_NONE) || (body_tile != TILE_NONE)) {
                 if(!player_pickup(head_tile) && !player_pickup(body_tile)) {
                     player_set_xy(head_edge_tile.rect.x, player.point.y);
                 }
@@ -212,7 +210,7 @@ Edge player_collide(void) {
             body_tile = tilemap_get(&body_edge_tile.point);
             if((head_tile < 0) | (body_tile < 0)) {
                 return EdgeRight;
-            } else if((head_tile != 0) || (body_tile != 0)) {
+            } else if((head_tile != TILE_NONE) || (body_tile != TILE_NONE)) {
                 if(!player_pickup(head_tile) && !player_pickup(body_tile)) {
                     player_set_xy(head_edge_tile.rect.x, player.point.y);
                 }
@@ -232,7 +230,7 @@ Edge player_collide(void) {
             }
         }
     } else if(player.direction.y > 0) {
-        if(tile_get_edge(&head_rect, EdgeBottom, &head_edge_tile) && tile_get_edge(&body_rect, EdgeBottom, &body_edge_tile)) {
+        if(tile_get_edge(&body_rect, EdgeBottom, &body_edge_tile)) {
             body_tile = tilemap_get(&body_edge_tile.point);
             if(body_tile < 0) {
                 return EdgeBottom;

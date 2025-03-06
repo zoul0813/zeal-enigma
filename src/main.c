@@ -26,11 +26,13 @@ reset:
     reset();
 
     while (true) {
+        TSTATE_LOG(1);
         uint8_t action = input();
         if (action == ACTION_QUIT)
             goto quit_game;
         update();
         draw();
+        TSTATE_LOG(1);
     }
 quit_game:
     deinit();
@@ -211,7 +213,9 @@ uint8_t input(void)
 void update(void)
 {
     bullet_move();
-    // enemies_move();
+    TSTATE_LOG(2)
+    enemies_move(&player.point);
+    TSTATE_LOG(2)
 
     bool player_moved = player_move();
     player_animate();

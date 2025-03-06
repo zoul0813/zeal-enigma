@@ -1,4 +1,5 @@
 #include <zvb_gfx.h>
+#include <zgdk/types.h>
 
 #include "world.h"
 #include "main.h"
@@ -10,7 +11,7 @@
 #define MAX_ENEMIES    8
 #define ENEMY_INDEX    48
 #define ENEMY_INACTIVE TILE_NONE
-#define ENEMY_SPEED    2
+#define ENEMY_SPEED    3
 
 typedef enum {
     ENEMY_A = 0x01,
@@ -21,8 +22,9 @@ typedef enum {
 } EnemyType;
 
 typedef struct {
+        Moveable(moveable);
+
         EnemyType type;
-        Direction direction;
 
         gfx_sprite* sprite_l;
         gfx_sprite* sprite_r;
@@ -33,7 +35,10 @@ extern uint8_t ENEMY_ROOMS[WORLD_WIDTH * WORLD_HEIGHT];
 
 error enemies_init(void);
 void enemies_spawn(uint8_t count);
-void enemy_destroy(enemy_t *enemy);
-void enemies_move(void);
+void enemies_move(Point *player_point);
 
+Edge enemy_collide(enemy_t *enemy);
+void enemy_destroy(enemy_t *enemy);
+void enemy_set_xy(enemy_t *enemy, uint16_t x, uint16_t y);
+inline void enemy_set_point(enemy_t *enemy, Point *point);
 #endif
