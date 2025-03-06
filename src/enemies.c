@@ -38,10 +38,10 @@ error enemies_init(void)
         enemy->sprite_l  = sprites_register(sprite);
         enemy->sprite_r  = sprites_register(sprite);
 
-        vect_set(enemy->direction, DIRECTION_NONE, DIRECTION_NONE);
+        vect2_set(enemy->direction, DIRECTION_NONE, DIRECTION_NONE);
         rect_set(&enemy->rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
         enemy_set_xy(enemy, WORLD_PLAYER_X, WORLD_PLAYER_Y);
-        point_copy(&enemy->last_point, &enemy->point);
+        vect2_copy_pointer(&enemy->last_point, &enemy->point);
     }
 
     return GFX_SUCCESS;
@@ -119,8 +119,8 @@ void enemies_move(Point *player_point) {
     enemy_last_moved = i;
     if(enemy == NULL) return;
 
-    vect_direction(&enemy->direction, player_point, &enemy->point);
-    point_copy(&enemy->last_point, &enemy->point);
+    vect2_direction(&enemy->direction, player_point, &enemy->point);
+    vect2_copy_pointer(&enemy->last_point, &enemy->point);
 
     // can't move
     if(enemy->direction.x == 0 && enemy->direction.y == 0) return;
@@ -211,7 +211,7 @@ void enemy_destroy(enemy_t *enemy) {
 }
 
 void enemy_set_xy(enemy_t *enemy, uint16_t x, uint16_t y) {
-    point_set(&enemy->point, x, y);
+    vect2_set_pointer(&enemy->point, x, y);
     sprite_set_xy(enemy->sprite_l, x, y);
     sprite_set_xy(enemy->sprite_r, x + SPRITE_WIDTH, y);
 }

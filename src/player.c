@@ -42,10 +42,10 @@ error player_init(void)
     player.sprite_body = sprites_register(sprite);
 
 
-    vect_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
+    vect2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
     rect_set(&player.rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
     player_set_xy(WORLD_PLAYER_X, WORLD_PLAYER_Y);
-    point_copy(&player.last_point, &player.point);
+    vect2_copy_pointer(&player.last_point, &player.point);
 
     return GFX_SUCCESS;
 }
@@ -97,7 +97,7 @@ void player_animate(void) {
 
 bool player_move(void)
 {
-    point_copy(&player.last_point, &player.point);
+    vect2_copy_pointer(&player.last_point, &player.point);
 
     // can't move
     if(player.direction.x == 0 && player.direction.y == 0) return false;
@@ -246,7 +246,7 @@ Edge player_collide(void) {
 }
 
 void player_set_xy(uint16_t x, uint16_t y) {
-    point_set(&player.point, x, y);
+    vect2_set_pointer(&player.point, x, y);
     sprite_set_xy(player.sprite_head, x, y);
     sprite_set_xy(player.sprite_body, x, y + SPRITE_HEIGHT);
 }
