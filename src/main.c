@@ -5,6 +5,7 @@
 #include <zos_sys.h>
 #include <zos_video.h>
 #include <zgdk.h>
+#include <zgdk/tilemap/scroll.h>
 
 #include "main.h"
 #include "hud.h"
@@ -155,6 +156,10 @@ void init(void)
 
 void deinit(void)
 {
+    // reset the tilemap scroll
+    tilemap_scroll(LAYER0, 0, 0);
+    tilemap_scroll(LAYER1, 0, 0);
+
     // reset screen
     ioctl(DEV_STDOUT, CMD_RESET_SCREEN, NULL);
 
