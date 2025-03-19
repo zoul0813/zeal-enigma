@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <zgdk/utils/print.h>
 #include <zgdk/tilemap.h>
+#include <zgdk/tilemap/scroll.h>
 #include <zgdk/types.h>
 
 #include "world.h"
