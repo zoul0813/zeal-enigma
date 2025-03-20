@@ -106,7 +106,7 @@ void room_set_tile(uint8_t x, uint8_t y, uint8_t tile)
 
 error world_init(void)
 {
-    rect_set(&ROOM.rect, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
+    rect_set_pointer(&ROOM.rect, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
     tilemap_register(&ROOM, TILES);
 
     // load the screen the player starts on

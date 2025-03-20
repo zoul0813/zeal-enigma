@@ -169,12 +169,14 @@ void deinit(void)
     err = player_deinit();
     handle_error(err, "deinit player", 0);
 
+#if DEBUG
     for(uint8_t y = 0; y < ROOM_HEIGHT; y++) {
         for(uint8_t x = 0; x < ROOM_WIDTH; x++) {
             printf("%02x", tilemap_get_xy(x, y));
         }
         printf("\n");
     }
+#endif
 }
 
 void reset(void)
@@ -218,9 +220,7 @@ uint8_t input(void)
 void update(void)
 {
     bullet_move();
-    TSTATE_LOG(2)
     enemies_move(&player.point);
-    TSTATE_LOG(2)
 
     bool player_moved = player_move();
     player_animate();

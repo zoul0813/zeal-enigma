@@ -41,11 +41,16 @@ error player_init(void)
     sprite.tile        = BODY_TILE(); // body is always header + 9
     player.sprite_body = sprites_register(sprite);
 
+#if DEBUG
+    sprite.tile = 4;
+    player.debug1 = sprites_register(sprite);
+    player.debug2 = sprites_register(sprite);
+#endif
 
-    vect2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
-    rect_set(&player.rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+    vec2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
+    rect_set_pointer(&player.rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
     player_set_xy(WORLD_PLAYER_X, WORLD_PLAYER_Y);
-    vect2_copy_pointer(&player.last_point, &player.point);
+    vec2_copy_pointer(&player.last_point, &player.point);
 
     return GFX_SUCCESS;
 }
@@ -97,9 +102,9 @@ void player_animate(void) {
 
 bool player_move(void)
 {
-    vect2_copy_pointer(&player.last_point, &player.point);
+    vec2_copy_pointer(&player.last_point, &player.point);
 
-    // can't move
+    // not moving
     if(player.direction.x == 0 && player.direction.y == 0) return false;
 
     uint16_t x  = player.point.x;
@@ -186,14 +191,22 @@ Edge player_collide(void) {
     Edge edge = EdgeNone;
 
     Rect head_rect, body_rect;
-    rect_set(&head_rect, player.point.x, player.point.y, player.size.w, player.size.h);
-    rect_set(&body_rect, player.point.x, player.point.y, player.size.w, player.size.h);
+    rect_set_pointer(&head_rect, player.point.x, player.point.y, player.size.w, player.size.h);
+    rect_set_pointer(&body_rect, player.point.x, player.point.y, player.size.w, player.size.h);
     body_rect.y += SPRITE_HEIGHT;
 
     if(player.direction.x < 0) {
         if(tile_get_edge(&head_rect, EdgeLeft, &head_edge_tile) && tile_get_edge(&body_rect, EdgeLeft, &body_edge_tile)) {
             head_tile = tilemap_get(&head_edge_tile.point);
             body_tile = tilemap_get(&body_edge_tile.point);
+
+#if DEBUG
+            player.debug1->x = head_edge_tile.rect.x;
+            player.debug1->y = head_edge_tile.rect.y;
+            player.debug2->x = body_edge_tile.rect.x;
+            player.debug2->y = body_edge_tile.rect.y;
+#endif
+
             if((head_tile < 0) | (body_tile < 0)) {
                 return EdgeLeft;
             } else if((head_tile != TILE_NONE) || (body_tile != TILE_NONE)) {
@@ -208,6 +221,14 @@ Edge player_collide(void) {
         if(tile_get_edge(&head_rect, EdgeRight, &head_edge_tile) && tile_get_edge(&body_rect, EdgeRight, &body_edge_tile)) {
             head_tile = tilemap_get(&head_edge_tile.point);
             body_tile = tilemap_get(&body_edge_tile.point);
+
+#if DEBUG
+            player.debug1->x = head_edge_tile.rect.x;
+            player.debug1->y = head_edge_tile.rect.y;
+            player.debug2->x = body_edge_tile.rect.x;
+            player.debug2->y = body_edge_tile.rect.y;
+#endif
+
             if((head_tile < 0) | (body_tile < 0)) {
                 return EdgeRight;
             } else if((head_tile != TILE_NONE) || (body_tile != TILE_NONE)) {
@@ -221,6 +242,13 @@ Edge player_collide(void) {
     if(player.direction.y < 0) {
         if(tile_get_edge(&head_rect, EdgeTop, &head_edge_tile)) {
             head_tile = tilemap_get(&head_edge_tile.point);
+
+#if DEBUG
+            player.debug1->x = head_edge_tile.rect.x;
+            player.debug1->y = head_edge_tile.rect.y;
+            player.debug2->x = SCREEN_WIDTH + SPRITE_WIDTH;
+#endif
+
             if(head_tile < 0) {
                 return EdgeTop;
             } else if(head_tile != TILE_NONE) {
@@ -232,11 +260,18 @@ Edge player_collide(void) {
     } else if(player.direction.y > 0) {
         if(tile_get_edge(&body_rect, EdgeBottom, &body_edge_tile)) {
             body_tile = tilemap_get(&body_edge_tile.point);
+
+#if DEBUG
+            player.debug1->x = body_edge_tile.rect.x;
+            player.debug1->y = body_edge_tile.rect.y;
+            player.debug2->x = SCREEN_WIDTH + SPRITE_WIDTH;
+#endif
+
             if(body_tile < 0) {
                 return EdgeBottom;
             } else if(body_tile != TILE_NONE) {
                 if(!player_pickup(body_tile)) {
-                    player_set_xy(player.point.x, head_edge_tile.rect.y);
+                    player_set_xy(player.point.x, body_edge_tile.rect.y - SPRITE_HEIGHT);
                 }
             }
         }
@@ -246,7 +281,7 @@ Edge player_collide(void) {
 }
 
 void player_set_xy(uint16_t x, uint16_t y) {
-    vect2_set_pointer(&player.point, x, y);
+    vec2_set_pointer(&player.point, x, y);
     sprite_set_xy(player.sprite_head, x, y);
     sprite_set_xy(player.sprite_body, x, y + SPRITE_HEIGHT);
 }

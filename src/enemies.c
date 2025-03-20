@@ -38,10 +38,10 @@ error enemies_init(void)
         enemy->sprite_l  = sprites_register(sprite);
         enemy->sprite_r  = sprites_register(sprite);
 
-        vect2_set(enemy->direction, DIRECTION_NONE, DIRECTION_NONE);
-        rect_set(&enemy->rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+        vec2_set(enemy->direction, DIRECTION_NONE, DIRECTION_NONE);
+        rect_set_pointer(&enemy->rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
         enemy_set_xy(enemy, WORLD_PLAYER_X, WORLD_PLAYER_Y);
-        vect2_copy_pointer(&enemy->last_point, &enemy->point);
+        vec2_copy_pointer(&enemy->last_point, &enemy->point);
     }
 
     return GFX_SUCCESS;
@@ -119,8 +119,8 @@ void enemies_move(Point *player_point) {
     enemy_last_moved = i;
     if(enemy == NULL) return;
 
-    vect2_direction(&enemy->direction, player_point, &enemy->point);
-    vect2_copy_pointer(&enemy->last_point, &enemy->point);
+    vec2_direction(&enemy->direction, player_point, &enemy->point);
+    vec2_copy_pointer(&enemy->last_point, &enemy->point);
 
     // can't move
     if(enemy->direction.x == 0 && enemy->direction.y == 0) return;
@@ -152,8 +152,8 @@ Edge enemy_collide(enemy_t *enemy) {
     Edge edge = EdgeNone;
 
     Rect left_rect, right_rect;
-    rect_set(&left_rect, enemy->point.x, enemy->point.y, enemy->size.w, enemy->size.h);
-    rect_set(&right_rect, enemy->point.x, enemy->point.y, enemy->size.w, enemy->size.h);
+    rect_set_pointer(&left_rect, enemy->point.x, enemy->point.y, enemy->size.w, enemy->size.h);
+    rect_set_pointer(&right_rect, enemy->point.x, enemy->point.y, enemy->size.w, enemy->size.h);
     right_rect.x += SPRITE_WIDTH;
 
     if(enemy->direction.x < 0) {
@@ -173,7 +173,7 @@ Edge enemy_collide(enemy_t *enemy) {
             if((right_tile < 0)) {
                 return EdgeRight;
             } else if((right_tile != 0)) {
-                enemy_set_xy(enemy, left_edge_tile.rect.x, enemy->point.y);
+                enemy_set_xy(enemy, right_edge_tile.rect.x, enemy->point.y);
             }
         }
     }
@@ -211,7 +211,7 @@ void enemy_destroy(enemy_t *enemy) {
 }
 
 void enemy_set_xy(enemy_t *enemy, uint16_t x, uint16_t y) {
-    vect2_set_pointer(&enemy->point, x, y);
+    vec2_set_pointer(&enemy->point, x, y);
     sprite_set_xy(enemy->sprite_l, x, y);
     sprite_set_xy(enemy->sprite_r, x + SPRITE_WIDTH, y);
 }

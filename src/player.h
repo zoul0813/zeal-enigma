@@ -25,6 +25,11 @@ typedef struct {
         // sprites
         gfx_sprite* sprite_head;
         gfx_sprite* sprite_body;
+
+#if DEBUG
+        gfx_sprite* debug1;
+        gfx_sprite* debug2;
+#endif
 } player_t;
 
 extern player_t player;
