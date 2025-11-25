@@ -1,4 +1,5 @@
 bin/
+assets/extras
 *.zip
 release/
 tmp/
@@ -7,3 +8,4 @@ assets/*.zt[spm]
 src/zar.h
 assets/archive/
 *.tiled-session
+zeal.ini

@@ -91,7 +91,7 @@ void init(void)
 
     uint16_t tile_offset        = 0;
     gfx_tileset_options options = {
-        .compression = TILESET_COMP_4BIT,
+        // .compression = TILESET_COMP_4BIT,
         .pal_offset  = 0,
         .from_byte   = 0,
     };
