@@ -210,7 +210,9 @@ Edge player_collide(void) {
             if((head_tile < 0) | (body_tile < 0)) {
                 return EdgeLeft;
             } else if((head_tile != TILE_NONE) || (body_tile != TILE_NONE)) {
-                if(!player_pickup(head_tile) && !player_pickup(body_tile)) {
+                bool head_blocked = head_tile != TILE_NONE && !player_pickup(head_tile);
+                bool body_blocked = body_tile != TILE_NONE && !player_pickup(body_tile);
+                if(head_blocked || body_blocked) {
                     player_set_xy(head_edge_tile.rect.x, player.point.y);
                 }
             }
@@ -232,7 +234,9 @@ Edge player_collide(void) {
             if((head_tile < 0) | (body_tile < 0)) {
                 return EdgeRight;
             } else if((head_tile != TILE_NONE) || (body_tile != TILE_NONE)) {
-                if(!player_pickup(head_tile) && !player_pickup(body_tile)) {
+                bool head_blocked = head_tile != TILE_NONE && !player_pickup(head_tile);
+                bool body_blocked = body_tile != TILE_NONE && !player_pickup(body_tile);
+                if(head_blocked || body_blocked) {
                     player_set_xy(head_edge_tile.rect.x, player.point.y);
                 }
             }
