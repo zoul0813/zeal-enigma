@@ -52,37 +52,28 @@ void enemies_spawn(uint8_t roomId)
 {
     if(roomId >= sizeof(ENEMY_ROOMS)) return;
     enemy_count = ENEMY_ROOMS[roomId];
-    if(enemy_count < 1) return; // no enemies to spawn
 
     Vector2_u8* validSpawn = (Vector2_u8*)data;  // Use flat array
 
     uint16_t spawns = 0;
     for(uint8_t row = 0; row < ROOM_HEIGHT; row++) {
-        for(uint8_t col = 0; col < ROOM_WIDTH; col++) {
-            uint8_t tile = tilemap_get_xy(col, row);
-            if(tile == TILE_NONE) {
+        for(uint8_t col = 0; col + 1 < ROOM_WIDTH; col++) {
+            if(tilemap_get_xy(col, row) == TILE_NONE && tilemap_get_xy(col + 1, row) == TILE_NONE) {
                 validSpawn[spawns].x = col + ROOM_OFFSET_X;
                 validSpawn[spawns].y = row + ROOM_OFFSET_Y;
-                // room_set_tile(col, row, 112);
                 spawns++;
             }
         }
     }
 
-    uint8_t i, r;
-    for(i = 0; i < enemy_count; i++) {
+    uint8_t i;
+    for(i = 0; i < enemy_count && spawns > 0; i++) {
         enemy_t* enemy = &ENEMIES[i];
-        r = rand8() % spawns;
-        while(validSpawn[r].x == 0xFF) {
-            r++;
-            if(r >= spawns) r = 0;
-        }
-
-        Tile tile_l; //, tile_r;
-        tile_at(validSpawn[r].x, validSpawn[r].y, &tile_l);
-        // tile_at(validSpawn[r].x + 1, validSpawn[r].y, &tile_r);
-
-        validSpawn[r].x = 0xFF; // mark the spot as occupied
+        uint16_t r = (uint8_t)rand8() % spawns;
+        Vector2_u8 spawn;
+        vec2_copy(spawn, validSpawn[r]);
+        Tile tile_l;
+        tile_at(spawn.x, spawn.y, &tile_l);
 
         r &= 0x07;
         if(r > 4) r -= 4;
@@ -92,10 +83,19 @@ void enemies_spawn(uint8_t roomId)
 
         enemy_set_point(enemy, &tile_l.rect.point);
 
-        // sprite_set_point(enemy->sprite_l, &tile_l.rect.point);
-        // sprite_set_point(enemy->sprite_r, &tile_r.rect.point);
+        // Remove every candidate whose two-tile footprint overlaps this enemy.
+        uint16_t remaining = 0;
+        for(uint16_t j = 0; j < spawns; j++) {
+            Vector2_u8 candidate;
+            vec2_copy(candidate, validSpawn[j]);
+            if(candidate.y == spawn.y && candidate.x + 1 >= spawn.x && candidate.x <= spawn.x + 1)
+                continue;
+            validSpawn[remaining++] = candidate;
+        }
+        spawns = remaining;
     }
 
+    enemy_count = i;
     for (i = enemy_count; i < MAX_ENEMIES; i++) {
         enemy_t* enemy        = &ENEMIES[i];
         enemy_destroy(enemy);

@@ -82,4 +82,4 @@ add_custom_command(
     DEPENDS ${asset_outputs}
 )
 
-zgdk_add_outputs(enigma KEEP_BIN)
+zgdk_add_outputs(enigma)
