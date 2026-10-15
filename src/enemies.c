@@ -173,7 +173,7 @@ Edge enemy_collide(enemy_t *enemy) {
             if((right_tile < 0)) {
                 return EdgeRight;
             } else if((right_tile != 0)) {
-                enemy_set_xy(enemy, right_edge_tile.rect.x, enemy->point.y);
+                enemy_set_xy(enemy, right_edge_tile.rect.x - SPRITE_WIDTH, enemy->point.y);
             }
         }
     }
