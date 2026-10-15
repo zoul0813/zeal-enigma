@@ -200,7 +200,7 @@ uint8_t screen_transition(const Edge edge, const Point point, const transition_c
                 transition = 1;
             } else {
                 // don't let the player go off screen
-                callback(point.x, SPRITE_HEIGHT + ROOM_OFFSET_Y);
+                callback(point.x, ROOM_TOP_PX + SPRITE_HEIGHT);
             }
             break;
         case EdgeBottom:
@@ -209,7 +209,7 @@ uint8_t screen_transition(const Edge edge, const Point point, const transition_c
                 transition = 1;
             } else {
                 // don't let the player go off screen
-                callback(point.x, (SPRITE_HEIGHT * ROOM_HEIGHT) + ROOM_OFFSET_Y);
+                callback(point.x, ROOM_BOTTOM_PX - SPRITE_HEIGHT);
             }
             break;
     }
