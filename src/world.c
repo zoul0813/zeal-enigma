@@ -70,7 +70,7 @@ void room_render_gate(void)
         object_t* gate = &gates[i];
         if (gate->room != roomId)
             continue;
-        if (gate->flags != OBJECT_ACTIVE)
+        if (!(gate->flags & OBJECT_ACTIVE))
             continue;
 
         if ((gate->flags & OBJECT_VERTICAL)) {
