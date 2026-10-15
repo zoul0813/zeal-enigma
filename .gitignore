@@ -1,4 +1,6 @@
 bin/
+build/
+debug/
 assets/extras
 *.zip
 release/
@@ -6,6 +8,7 @@ tmp/
 assets/*.zt[spm]
 *.zar
 src/zar.h
+assets/enigma_assets.h
 assets/archive/
 *.tiled-session
 zeal.ini

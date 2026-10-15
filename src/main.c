@@ -10,7 +10,7 @@
 #include "main.h"
 #include "hud.h"
 #include "assets.h"
-#include "zar.h"
+#include <enigma_assets.h>
 #include "objects.h"
 #include "world.h"
 #include "player.h"
