@@ -110,11 +110,10 @@ error world_init(void)
     tilemap_register(&ROOM, TILES);
 
     // load the screen the player starts on
-    world_position.x = WORLD_START_X;
-    world_position.y = WORLD_START_Y;
-
-    Point point;
-    screen_load(world_position, EdgeNone, point, NULL);
+    Vector2_u8 world = { .x = WORLD_START_X, .y = WORLD_START_Y };
+    Point point = {0, 0};
+    error err = screen_load(world, EdgeNone, point, NULL);
+    if (err != ERR_SUCCESS) return err;
 
     tilemap_scroll_x(0, 0);
     return ERR_SUCCESS;
@@ -123,18 +122,18 @@ error world_init(void)
 
 /** SCREEN FUNCTIONS */
 
-void screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback)
+error screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback)
 {
-    // update to the latest
-    world_position.x = world.x;
-    world_position.y = world.y;
-
-    room_set_palette();
-
     // load the current screen into 0,0 and jump to it
     gfx_wait_vblank(&vctx);
-    load_tilemap(&vctx, world.x, world.y, 0, 0);
+    error err = load_tilemap(&vctx, world.x, world.y, 0, 0);
     gfx_wait_end_vblank(&vctx);
+    if (err != ERR_SUCCESS) return err;
+
+    // Commit the new room only after its tilemap loads successfully.
+    world_position.x = world.x;
+    world_position.y = world.y;
+    room_set_palette();
 
     room_render_keys();
     room_render_fuel();
@@ -155,6 +154,7 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
         }
     }
     gfx_wait_end_vblank(&vctx);
+    return ERR_SUCCESS;
 }
 
 /**
@@ -164,9 +164,9 @@ void screen_load(const Vector2_u8 world, const Edge edge, const Point point, tra
  * the mext screen into view, if applicable.
  *
  * @param edge The edge of the current screen the player is exiting from
- * @returns 1 if transition occurred, 0 is no transition occurred
+ * @returns ERR_SUCCESS if successful or clamped at a world boundary, otherwise the load error
  */
-uint8_t screen_transition(const Edge edge, const Point point, const transition_callback_t callback)
+error screen_transition(const Edge edge, const Point point, const transition_callback_t callback)
 {
     uint8_t transition = 0;
 
@@ -215,9 +215,8 @@ uint8_t screen_transition(const Edge edge, const Point point, const transition_c
     }
 
     if (transition) {
-        screen_load(new_world, edge, point, callback);
-        return 1;
+        return screen_load(new_world, edge, point, callback);
     }
 
-    return 0;
+    return ERR_SUCCESS;
 }

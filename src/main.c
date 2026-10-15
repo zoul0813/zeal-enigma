@@ -229,7 +229,8 @@ void update(void)
         if (map_edge != EdgeNone) {
             bullets_clear();
             draw();
-            screen_transition(map_edge, player.point, player_set_xy);
+            zos_err_t err = screen_transition(map_edge, player.point, player_set_xy);
+            handle_error(err, "load room", 1);
         }
     }
 }
