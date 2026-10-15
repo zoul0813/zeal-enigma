@@ -69,7 +69,9 @@ void enemies_spawn(uint8_t roomId)
     uint8_t i;
     for(i = 0; i < enemy_count && spawns > 0; i++) {
         enemy_t* enemy = &ENEMIES[i];
-        uint16_t r = (uint8_t)rand8() % spawns;
+        uint16_t r = (uint8_t)rand8();
+        r = (r << 8) | (uint8_t)rand8();
+        r %= spawns;
         Vector2_u8 spawn;
         vec2_copy(spawn, validSpawn[r]);
         Tile tile_l;
