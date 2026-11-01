@@ -1,9 +1,10 @@
 #include <zgdk/types.h>
 #include <zgdk/tilemap.h>
+#include <world/world.h>
 #include "main.h"
 
-#ifndef WORLD_H
-#define WORLD_H
+#ifndef ENIGMA_GAME_WORLD_H
+#define ENIGMA_GAME_WORLD_H
 
 // size of world in rooms
 #define WORLD_WIDTH    8
@@ -38,10 +39,6 @@
 
 #define ROOM_ID() ((world_position.y * WORLD_WIDTH) + world_position.x)
 
-typedef void (*transition_callback_t)(uint16_t x, uint16_t y);
-
-extern Vector2_u8 world_position;
-
 typedef enum {
     TILE_NONE    = 0,   // player can move on this
     TILE_WALL    = 1,   // wall, or other obstruction
@@ -50,12 +47,9 @@ typedef enum {
     TILE_UNKNOWN = 255, // unknown, assume an obstruction
 } TileType;
 
-extern Tilemap SCREEN[ROOM_WIDTH * ROOM_HEIGHT];
-
-error world_init(void);
+zos_err_t game_world_init(void);
 void room_set_tile(const uint8_t x, const uint8_t y, const uint8_t tile);
 
-error screen_load(const Vector2_u8 world, const Edge edge, const Point point, transition_callback_t const callback);
-error screen_transition(const Edge edge, const Point point, const transition_callback_t callback);
+zos_err_t game_world_transition(Edge edge);
 
 #endif

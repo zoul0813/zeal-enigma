@@ -12,3 +12,5 @@ assets/enigma_assets.h
 assets/archive/
 *.tiled-session
 zeal.ini
+
+src/enigma_assets.h

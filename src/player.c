@@ -11,7 +11,7 @@
 #include "player.h"
 #include "bullet.h"
 #include "main.h"
-#include "world.h"
+#include "game_world.h"
 #include "objects.h"
 #include "hud.h"
 

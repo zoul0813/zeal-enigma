@@ -1,7 +1,7 @@
 #include <zvb_gfx.h>
 #include <zgdk/types.h>
 
-#include "world.h"
+#include "game_world.h"
 #include "main.h"
 
 

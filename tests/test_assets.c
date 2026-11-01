@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "assets.h"
-#include "world.h"
+#include "game_world.h"
 
 #define ROOM_SIZE (ROOM_WIDTH * ROOM_HEIGHT)
 
@@ -100,7 +100,7 @@ static void reset_test(uint16_t size)
 static void reject_room(uint16_t size)
 {
     reset_test(size);
-    assert(load_tilemap(NULL, 0, 0, 0, 0) != ERR_SUCCESS);
+    assert(load_tilemap(NULL, 0, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y) != ERR_SUCCESS);
     assert(uploads == 0 && decodes == 0 && collision_writes == 0);
     for (unsigned i = 0; i < ROOM_SIZE; i++) assert(data[i] == 0xa5);
 }
@@ -115,7 +115,7 @@ int main(void)
     reset_test(sizeof(data) + 1);
     assert(load_palette(NULL, 0, 0) != ERR_SUCCESS && reads == 0);
     reset_test(sizeof(data) - ROOM_SIZE + 1);
-    assert(load_tilemap(NULL, 0, 0, 0, 0) != ERR_SUCCESS && reads == 0);
+    assert(load_tilemap(NULL, 0, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y) != ERR_SUCCESS && reads == 0);
     reset_test(0);
     assert(load_tileset(NULL, 0, &options) != ERR_SUCCESS && reads == 0);
 
@@ -136,7 +136,7 @@ int main(void)
     reset_test(32); short_read = 1;
     assert(load_tileset(NULL, 0, &options) != ERR_SUCCESS && uploads == 0);
     reset_test(32); short_read = 1;
-    assert(load_tilemap(NULL, 0, 0, 0, 0) != ERR_SUCCESS && decodes == 0);
+    assert(load_tilemap(NULL, 0, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y) != ERR_SUCCESS && decodes == 0);
     reset_test(32); lookup_error = ERR_FAILURE;
     assert(load_tileset(NULL, 0, &options) != ERR_SUCCESS && reads == 0);
     reset_test(32); read_error = ERR_FAILURE;
@@ -156,7 +156,7 @@ int main(void)
     /* Exact output followed by an extra packet or trailing control byte. */
     archive_data[12] = 0xc7; /* Six runs of 128 plus 72 = 840. */
     reset_test(14);
-    assert(load_tilemap(NULL, 0, 0, 0, 0) == ERR_SUCCESS);
+    assert(load_tilemap(NULL, 0, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y) == ERR_SUCCESS);
     assert(decodes == 1 && uploads == ROOM_HEIGHT && collision_writes == ROOM_SIZE);
     archive_data[14] = 0;
     reject_room(15);
@@ -175,7 +175,7 @@ int main(void)
         remaining -= length;
     }
     reset_test(at);
-    assert(load_tilemap(NULL, 0, 0, 0, 0) == ERR_SUCCESS);
+    assert(load_tilemap(NULL, 0, 0, ROOM_OFFSET_X, ROOM_OFFSET_Y) == ERR_SUCCESS);
     assert(decodes == 1 && uploads == ROOM_HEIGHT);
 
     unsigned rooms = 0;
@@ -188,7 +188,7 @@ int main(void)
         assert(!ferror(file));
         fclose(file);
         reset_test(length);
-        assert(load_tilemap(NULL, room % WORLD_WIDTH, room / WORLD_WIDTH, 0, 0) == ERR_SUCCESS);
+        assert(load_tilemap(NULL, room % WORLD_WIDTH, room / WORLD_WIDTH, ROOM_OFFSET_X, ROOM_OFFSET_Y) == ERR_SUCCESS);
         assert(decodes == 1 && uploads == ROOM_HEIGHT && collision_writes == ROOM_SIZE);
         rooms++;
     }

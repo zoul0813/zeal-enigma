@@ -12,7 +12,7 @@
 #include "assets.h"
 #include <enigma_assets.h>
 #include "objects.h"
-#include "world.h"
+#include "game_world.h"
 #include "player.h"
 #include "bullet.h"
 #include "enemies.h"
@@ -135,7 +135,7 @@ void init(void)
     tilemap_fill(&vctx, LAYER1, RED_GREY, 0, 0, WIDTH, 4);
     tilemap_fill(&vctx, LAYER1, RED_YELLOW, 0, HEIGHT - 5, WIDTH, 5);
 
-    err = world_init();
+    err = game_world_init();
     handle_error(err, "initialize world", 1);
 
 #if DEBUG
@@ -229,8 +229,8 @@ void update(void)
         if (map_edge != EdgeNone) {
             bullets_clear();
             draw();
-            zos_err_t err = screen_transition(map_edge, player.point, player_set_xy);
-            handle_error(err, "load room", 1);
+            zos_err_t err = game_world_transition(map_edge);
+            handle_error(err, "change room", 1);
         }
     }
 }

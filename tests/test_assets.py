@@ -10,7 +10,7 @@ with tempfile.TemporaryDirectory(prefix="enigma-assets-") as directory:
     temporary = Path(directory)
     for name in (
         "zvb_gfx.h", "zar.h", "zos_errors.h", "zgdk/types.h",
-        "zgdk/tilemap.h", "zgdk/compress/rle.h",
+        "zgdk/tilemap.h", "zgdk/compress/rle.h", "world/world.h",
     ):
         header = temporary / name
         header.parent.mkdir(parents=True, exist_ok=True)

@@ -3,7 +3,7 @@
 #include <zgdk/tilemap.h>
 
 #include "assets.h"
-#include "world.h"
+#include "game_world.h"
 
 gfx_sprite SPRITE_ARENA[MAX_SPRITES];
 zar_file_t zar_file;
@@ -77,10 +77,7 @@ zos_err_t load_tileset(gfx_context* ctx, uint8_t index, gfx_tileset_options* opt
     return err;
 }
 
-zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, uint8_t map_y) {
-    (void)x;
-    (void)y;
-
+zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t tile_x, uint8_t tile_y) {
     uint8_t offset = (y * WORLD_WIDTH) + x;
     uint16_t size;
     uint8_t *rle_data = &data[ROOM_TILE_COUNT];
@@ -106,7 +103,7 @@ zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t map_x, ui
             line[col] = tile;
         }
 
-        err = gfx_tilemap_load(ctx, line, ROOM_WIDTH, LAYER0, (map_x * WIDTH) + ROOM_OFFSET_X, (map_y * HEIGHT) + row + ROOM_OFFSET_Y);
+        err = gfx_tilemap_load(ctx, line, ROOM_WIDTH, LAYER0, tile_x, tile_y + row);
         if (err != ERR_SUCCESS) return err | 0x80;
     }
 

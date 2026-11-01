@@ -14,7 +14,7 @@ add_executable(enigma
     src/hud.c
     src/objects.c
     src/player.c
-    src/world.c
+    src/game_world.c
 )
 
 zos_use(zvb)
@@ -23,7 +23,21 @@ zos_use(zgdk)
 find_package(ZGDK REQUIRED)
 zos_use(zar)
 find_package(ZAR REQUIRED)
-target_link_libraries(enigma PRIVATE zgdk zvb zar)
+if(NOT TARGET core)
+    zos_use(coreutils)
+    find_package(COREUTILS REQUIRED)
+endif()
+target_link_libraries(enigma PRIVATE zgdk zvb_gfx zvb_sound core zar)
+
+get_filename_component(DEFAULT_WORLD_ENGINE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../.." ABSOLUTE)
+set(WORLD_ENGINE_PATH "${DEFAULT_WORLD_ENGINE_PATH}" CACHE PATH "Directory containing world.lib's libsrc/ and lib/")
+if(NOT EXISTS "${WORLD_ENGINE_PATH}/lib/world.lib")
+    message(FATAL_ERROR "Build ${WORLD_ENGINE_PATH}/lib/world.lib before building Enigma")
+endif()
+target_include_directories(enigma PRIVATE "${WORLD_ENGINE_PATH}/libsrc")
+target_link_options(enigma PRIVATE "SHELL:-k ${WORLD_ENGINE_PATH}/lib" "SHELL:-l world.lib")
+set_property(TARGET enigma APPEND PROPERTY LINK_DEPENDS "${WORLD_ENGINE_PATH}/lib/world.lib")
+target_compile_options(enigma PRIVATE $<$<COMPILE_LANGUAGE:C>:--nostdlib>)
 
 foreach(flag BREAK EMULATOR FRAMELOCK DEBUG)
     option(${flag} "Enable ${flag}" OFF)

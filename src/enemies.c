@@ -9,7 +9,7 @@
 
 #include "assets.h"
 #include "enemies.h"
-#include "world.h"
+#include "game_world.h"
 
 enemy_t ENEMIES[MAX_ENEMIES];
 
