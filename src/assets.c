@@ -72,7 +72,7 @@ zos_err_t load_tileset(gfx_context* ctx, uint8_t index, gfx_tileset_options* opt
     zos_err_t err = read_asset(index, data, sizeof(data), &size);
     if(err != ERR_SUCCESS) return err | 0xC0;
 
-    err = gfx_tileset_load(ctx, data, size, options);
+    err = gfx_tileset_load_none(ctx, data, size, options->from_byte, options->pal_offset, options->opacity);
     if(err != ERR_SUCCESS) return err | 0x80;
     return err;
 }

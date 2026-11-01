@@ -13,6 +13,7 @@ extern zar_file_t zar_file;
 extern zar_file_entry_t entry;
 
 zos_err_t load_palette(gfx_context* ctx, uint8_t index, uint8_t from);
+/* Enigma's tilesets contain raw packed 4-bit pixels. compression is not used. */
 zos_err_t load_tileset(gfx_context* ctx, uint8_t index, gfx_tileset_options* options);
 zos_err_t load_tilemap(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t tile_x, uint8_t tile_y);
 

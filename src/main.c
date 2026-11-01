@@ -91,7 +91,6 @@ void init(void)
 
     uint16_t tile_offset        = 0;
     gfx_tileset_options options = {
-        // .compression = TILESET_COMP_4BIT,
         .pal_offset  = 0,
         .from_byte   = 0,
     };
@@ -187,7 +186,7 @@ void reset(void)
 static uint16_t input1_prev = 0;
 uint8_t input(void)
 {
-    uint16_t input1 = input_get();
+    uint16_t input1 = input_read();
 
     if (input1 == input1_prev)
         return 0;

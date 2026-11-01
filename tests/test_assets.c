@@ -43,9 +43,10 @@ zos_err_t gfx_palette_load(gfx_context *ctx, void *bytes, uint16_t size, uint8_t
     return ERR_SUCCESS;
 }
 
-zos_err_t gfx_tileset_load(gfx_context *ctx, void *bytes, uint16_t size, const gfx_tileset_options *options)
+zos_err_t gfx_tileset_load_none(gfx_context *ctx, uint8_t *bytes, uint16_t size, uint16_t from, uint8_t pal_offset, uint8_t opacity)
 {
-    (void)ctx; (void)bytes; (void)size; (void)options;
+    (void)ctx; (void)bytes; (void)size;
+    assert(from == 4096 && pal_offset == 2 && opacity == 1);
     uploads++;
     return ERR_SUCCESS;
 }
@@ -107,7 +108,7 @@ static void reject_room(uint16_t size)
 
 int main(void)
 {
-    gfx_tileset_options options = {0};
+    gfx_tileset_options options = { .from_byte = 4096, .pal_offset = 2, .opacity = 1 };
 
     /* All entry reads must reject oversize and empty input before reading. */
     reset_test(sizeof(data) + 1);

@@ -13,7 +13,7 @@ typedef uint8_t zos_err_t;
 
 typedef struct { uint8_t unused; } gfx_context;
 typedef struct { uint8_t unused; } gfx_sprite;
-typedef struct { uint8_t unused; } gfx_tileset_options;
+typedef struct { uint8_t compression; uint16_t from_byte; uint8_t pal_offset, opacity; } gfx_tileset_options;
 typedef struct { uint8_t unused; } Tilemap;
 typedef struct { uint8_t x, y; } Vector2_u8;
 typedef struct { uint16_t x, y; } Point;
@@ -25,7 +25,7 @@ zos_err_t zar_file_open(const char *, zar_file_t *);
 zos_err_t zar_file_entry_from_index(zar_file_t *, uint8_t, zar_file_entry_t *);
 zos_err_t zar_file_read(zar_file_t *, zar_file_entry_t *, uint8_t *, uint16_t *);
 zos_err_t gfx_palette_load(gfx_context *, void *, uint16_t, uint8_t);
-zos_err_t gfx_tileset_load(gfx_context *, void *, uint16_t, const gfx_tileset_options *);
+zos_err_t gfx_tileset_load_none(gfx_context *, uint8_t *, uint16_t, uint16_t, uint8_t, uint8_t);
 zos_err_t gfx_tilemap_load(gfx_context *, void *, uint16_t, uint8_t, uint8_t, uint8_t);
 int16_t tilemap_set_xy(uint8_t, uint8_t, uint8_t);
 void decompress_rle(uint8_t *, uint16_t, uint8_t *);
