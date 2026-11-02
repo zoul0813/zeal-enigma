@@ -27,15 +27,13 @@
 // offset for where the map starts in the zar
 #define TILEMAP_OFFSET 0
 
-// starting room
-// #define WORLD_START_X  3
-// #define WORLD_START_Y  3
-#define WORLD_START_X  2
+// Original (3,4), with the TMX map's vertically reversed world coordinates.
+#define WORLD_START_X  3
 #define WORLD_START_Y  3
 
-// starting position of player on screen
-#define WORLD_PLAYER_X ((WIDTH / 4) * SPRITE_WIDTH)
-#define WORLD_PLAYER_Y (((HEIGHT / 4) * 3) * SPRITE_HEIGHT)
+// Original entry at character (6,15), scaled to the Zeal tiles and HUD.
+#define WORLD_PLAYER_X (7 * SPRITE_WIDTH)
+#define WORLD_PLAYER_Y ((ROOM_OFFSET_Y + 16) * SPRITE_HEIGHT)
 
 #define ROOM_ID() ((world_position.y * WORLD_WIDTH) + world_position.x)
 
@@ -48,6 +46,7 @@ typedef enum {
 } TileType;
 
 zos_err_t game_world_init(void);
+zos_err_t game_world_respawn(void);
 void room_set_tile(const uint8_t x, const uint8_t y, const uint8_t tile);
 
 zos_err_t game_world_transition(Edge edge);

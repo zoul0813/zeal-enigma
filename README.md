@@ -9,7 +9,7 @@ and minimap modules are not linked into this game.
 Enigma owns its archive/decompression, tileset and palette uploads, room object
 overlays, player movement and arrival positions, pickups, gates, and enemies.
 The game-side outer-world boundary clamp now uses the room's pixel bounds;
-the original vertical clamp mixed tile offsets with pixel coordinates.
+the earlier Zeal port mixed tile offsets with pixel coordinates.
 
 ## Build
 
@@ -39,25 +39,56 @@ zeal-native -H tmp/zeal-enigma/bin
 
 At the Zeal OS prompt, enter `cd H:/`, then `./enigma`.
 
+## Original-game behavior
+
+Enigma is based on the 1985 maze shooter by Mark J. Moore and Peter J. Bartlett,
+published by CBM UK.
+
+The port now uses the original per-room enemy population/speed tables and four
+difficulty levels. All active enemies pursue together on alternate 50 Hz logic
+ticks after a difficulty-dependent pause. Eight enemy appearances award the
+original 10–800 points; keys award 5,000. Rooms repopulate after re-entry.
+
+Arrows select difficulty on the title screen; Space starts. During play, arrows
+move in eight directions and Space fires repeatedly while moving. The laser has
+215 units and eight projectile slots; energy cells refill it. Enemy contact
+costs one of three lives. Respawning restores the room-entry position and laser
+energy while retaining keys, opened gates, collected fuel, and score. After the
+last life, Space starts a fresh game; the high score is retained until exit.
+Right Shift or Quote exits through the SDK Select mapping.
+
+The larger Zeal sprites use adapted collision footprints and movement scaling.
+The death presentation is a short pause, rather than the original palette and
+sound sequence. Original sound, exact animation, and final-room message-letter
+pickups remain unfinished. The original has no formal victory screen, so this
+port does not introduce one.
+
 ## Verify
 
 From this clone:
 
 ```sh
-python3 tests/verify_world.py --baseline build/baseline
+python3 tests/test_assets.py
+python3 tests/test_gameplay.py
 python3 tests/verify_world.py
+python3 tests/verify_gameplay.py
 ```
 
-The baseline artifacts are a fresh build of upstream commit `ffc3a81`, before
-the engine migration, and are local build outputs. Both commands use the installed `zeal-native` debugger and
-compare startup state and all 840 logical room tiles against the original game
-and TMX data. Checks cover shooting, enemy setup, key/gate and fuel behavior,
-all four transition directions, arrival positions, persistent pickups, and
-world boundary clamping (the latter on the migrated build only).
+Host tests use ASan/UBSan to check asset safety and gameplay rules. The target
+checks use the installed `zeal-native` debugger with the freshly built binary
+and link map. They cover room geometry and all four transitions, persistent
+pickups/gates, difficulty selection, repeated fire, contact deaths, respawn,
+game over/restart, and high score. They place actors near test cases rather
+than performing a complete playthrough. `ZGDK_PATH` can select the SDK checkout
+for host gameplay tests.
 
-These are focused emulator checks that place the player near objects and room
-edges, rather than a full playthrough. Upstream gameplay and asset-loader fixes are retained.
+The emulator reads ROM images from `~/.zeal8bit/roms/` by default; override with
+`ZEAL_NATIVE_ROM`, `ZEAL_NATIVE_EEPROM`, and `ZEAL_NATIVE_TF`. Writable disk
+images are copied to a temporary directory before running. Logs are written to
+`build/verify-world-lib.log` and `build/verify-gameplay.log`.
 
-The verifier reads ROM images from `~/.zeal8bit/roms/` by default; override with
-`ZEAL_NATIVE_ROM`, `ZEAL_NATIVE_EEPROM`, and `ZEAL_NATIVE_TF` if needed. Writable
-disk images are copied to a temporary directory before running.
+## Performance
+
+Run `python3 tests/profile_gameplay.py` to measure emulated 10 MHz CPU timing
+from the normal build without adding instrumentation. The profiler writes
+`build/profile-gameplay.json` and its debugger transcript.

@@ -51,47 +51,30 @@ void bullet_move(void)
 
             x += (bullet->direction.x * BULLET_SPEED);
             y += (bullet->direction.y * BULLET_SPEED);
-            cx = x + 8;
-            cy = y + 8;
-
-            if ((x > SCREEN_WIDTH || x < SPRITE_WIDTH) || (y > SCREEN_HEIGHT || y < SPRITE_HEIGHT)) {
-                // offscreen
+            cx = x - SPRITE_WIDTH / 2;
+            cy = y - SPRITE_HEIGHT / 2;
+            if (x < (int16_t)(ROOM_LEFT_PX + SPRITE_WIDTH) || x > ROOM_RIGHT_PX ||
+                y < (int16_t)(ROOM_TOP_PX + SPRITE_HEIGHT) || y > (int16_t)ROOM_BOTTOM_PX) {
                 bullet_destroy(bullet);
                 goto next_bullet;
             }
-
-            for(j = 0; j < MAX_ENEMIES; j++) {
+            int16_t type = tilemap_get_xy((cx >> 4) - ROOM_OFFSET_X, (cy >> 4) - ROOM_OFFSET_Y);
+            if (type != TILE_NONE) {
+                bullet_destroy(bullet);
+                goto next_bullet;
+            }
+            for (j = 0; j < MAX_ENEMIES; j++) {
                 enemy_t *enemy = &ENEMIES[j];
-                if(enemy->sprite_l->tile == ENEMY_INACTIVE) continue;
-                if((cx >= enemy->sprite_l->x) && (cx <= enemy->sprite_r->x + SPRITE_WIDTH)) {
-                    // inside
-                    if((cy >= enemy->sprite_l->y) && (cy <= enemy->sprite_l->y + SPRITE_HEIGHT)) {
-                        // hit enemy
-                        uint32_t value = (enemy->sprite_l->tile - ENEMY_INDEX) + 1;
-                        value <<= 10;
-                        player.score += value;
-                        hud_score(player.score);
-                        enemy_destroy(enemy);
-                        bullet_destroy(bullet);
-                        goto next_bullet;
-                    }
+                if (enemy->sprite_l->tile == ENEMY_INACTIVE) continue;
+                if (cx >= (int16_t)enemy->point.x - (int16_t)SPRITE_WIDTH && cx < (int16_t)enemy->point.x + (int16_t)SPRITE_WIDTH &&
+                    cy >= (int16_t)enemy->point.y - (int16_t)SPRITE_HEIGHT && cy < (int16_t)enemy->point.y) {
+                    player.score += enemy_score(enemy);
+                    if (player.score > MAX_SCORE) player.score -= MAX_SCORE + 1UL;
+                    hud_score(player.score);
+                    enemy_destroy(enemy);
+                    bullet_destroy(bullet);
+                    goto next_bullet;
                 }
-            }
-
-            // TODO: better tile x/y coordinate system?
-            uint8_t tx, ty;
-            tx = ((x + 8) >> 4) - 1;
-            if (bullet->direction.x > 0)
-                tx++;
-            ty = ((y + 8) >> 4) - 1;
-            if (bullet->direction.y > 0)
-                ty++;
-
-            TileType type = tilemap_get_xy(tx - ROOM_OFFSET_X, ty - ROOM_OFFSET_Y);
-            if(type != TILE_NONE) {
-                // hit something
-                bullet_destroy(bullet);
-                goto next_bullet;
             }
 
             if(frame == 6) tile++;
@@ -100,7 +83,7 @@ void bullet_move(void)
             bullet->sprite->x = x;
             bullet->sprite->y = y;
         }
-next_bullet:
+next_bullet:;
     }
 }
 
@@ -122,7 +105,6 @@ uint8_t bullet_shoot(Point* point, Direction* direction)
             bullet->direction.y = direction->y;
 
             return 1;
-            break;
         }
     }
     return 0;

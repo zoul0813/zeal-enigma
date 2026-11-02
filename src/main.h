@@ -37,15 +37,16 @@ typedef uint8_t error;
 
 extern uint8_t buffer[WIDTH];
 
-void on_error(zos_err_t err);
+enum { GAME_TITLE, GAME_PLAYING, GAME_DYING };
+extern uint8_t game_state;
+extern uint8_t game_difficulty;
+extern uint32_t high_score;
 void init(void);
 void deinit(void);
 void reset(void);
 uint8_t input(void);
 
 void update(void);
-void draw_paused(uint8_t paused);
-void draw_gameover(uint8_t gameover);
 void draw(void);
 
 extern gfx_context vctx;

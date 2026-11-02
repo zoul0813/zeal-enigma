@@ -12,6 +12,7 @@
 #include "player.h"
 
 static uint8_t room_tiles[ROOM_WIDTH * ROOM_HEIGHT];
+static Point room_entry;
 static void room_entered(gfx_context* ctx, uint8_t x, uint8_t y, Edge edge);
 
 static const world_config_t world_config = {
@@ -114,7 +115,6 @@ static void room_entered(gfx_context* ctx, uint8_t x, uint8_t y, Edge edge) {
     room_render_keys();
     room_render_fuel();
     room_render_gate();
-    enemies_spawn(ROOM_ID());
 
     sprintf(buffer, "%02d", ROOM_ID());
     nprint_string_layer(ctx, buffer, 2, LAYER0, 0, HEIGHT - 1);
@@ -128,11 +128,22 @@ static void room_entered(gfx_context* ctx, uint8_t x, uint8_t y, Edge edge) {
         default: break;
     }
     gfx_wait_end_vblank(ctx);
+    room_entry = player.point;
+    enemies_spawn(ROOM_ID());
 }
 
 zos_err_t game_world_init(void) {
     Vector2_u8 start = { WORLD_START_X, WORLD_START_Y };
     return world_init(&vctx, &world_config, start);
+}
+
+zos_err_t game_world_respawn(void) {
+    Vector2_u8 room;
+    room = world_position;
+    player_set_xy(room_entry.x, room_entry.y);
+    vec2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
+    player.energy = MAX_ENERGY;
+    return world_init(&vctx, &world_config, room);
 }
 
 zos_err_t game_world_transition(Edge edge) {

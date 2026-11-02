@@ -7,10 +7,11 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#define PLAYER_SPEED (3U)
+#define PLAYER_SPEED (4U)
 
 #define ENERGY_DIVIDER (4U)
-#define MAX_ENERGY     (27U * ENERGY_DIVIDER)
+#define ENERGY_BARS    (27U)
+#define MAX_ENERGY     (215U)
 #define MAX_LIVES      (3U)
 #define MAX_SCORE      (99999999U)
 
@@ -36,6 +37,7 @@ extern player_t player;
 
 error player_init(void);
 error player_deinit(void);
+void player_reset(void);
 bool player_move(void);
 void player_animate(void);
 Edge player_collide(void);

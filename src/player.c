@@ -27,11 +27,6 @@ static int8_t frame_dir     = 1;
 
 error player_init(void)
 {
-    player.score  = 0;
-    player.energy = MAX_ENERGY;
-    player.lives  = 3;
-    player.keys   = 0;
-
     gfx_sprite sprite = {
         .tile  = PLAYER_TILE + frame_offset,
         .flags = SPRITE_NONE,
@@ -47,12 +42,26 @@ error player_init(void)
     player.debug2 = sprites_register(sprite);
 #endif
 
-    vec2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
-    rect_set_pointer(&player.rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
-    player_set_xy(WORLD_PLAYER_X, WORLD_PLAYER_Y);
-    vec2_copy_pointer(&player.last_point, &player.point);
+    player_reset();
 
     return GFX_SUCCESS;
+}
+
+void player_reset(void) {
+    player.score = 0;
+    player.energy = MAX_ENERGY;
+    player.lives = MAX_LIVES;
+    player.keys = 0;
+    frame = 0;
+    frame_offset = 1;
+    frame_dir = 1;
+    vec2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
+    rect_set_pointer(&player.rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+    player.sprite_head->tile = PLAYER_TILE + 1;
+    player.sprite_body->tile = BODY_TILE();
+    player.sprite_head->flags = SPRITE_NONE;
+    player.sprite_body->flags = SPRITE_NONE;
+    player_set_xy(WORLD_PLAYER_X, WORLD_PLAYER_Y);
 }
 
 error player_deinit(void)
@@ -136,17 +145,18 @@ bool player_pickup(int16_t type) {
             return false;
     }
 
-    if ((type >= GATES_INDEX) && (type <= (GATES_INDEX + keys_len))) {
+    if ((type >= GATES_INDEX) && (type < (GATES_INDEX + keys_len))) {
         return false;
     }
 
-    if ((type >= KEYS_INDEX) && (type <= (KEYS_INDEX + keys_len))) {
+    if ((type >= KEYS_INDEX) && (type < (KEYS_INDEX + keys_len))) {
         uint8_t value = type - KEYS_INDEX;
         object_t* obj = &keys[value];
         obj->flags    = OBJECT_INACTIVE;
         room_set_tile(obj->x, obj->y, TILE_NONE); // make it a ground tile
 
-        player.score += 5000; /// 5,000 for keys
+        player.score += 5000;
+        if (player.score > MAX_SCORE) player.score -= MAX_SCORE + 1UL;
         player.keys  |= (1 << value);
 
         for (uint8_t i = 0; i < gates_len; i++) {
@@ -171,9 +181,7 @@ bool player_pickup(int16_t type) {
                 obj->flags = OBJECT_INACTIVE;
                 room_set_tile(obj->x, obj->y, TILE_NONE); // make it a ground tile
 
-                player.energy += FUEL_VALUE;
-                if (player.energy > MAX_ENERGY)
-                    player.energy = MAX_ENERGY;
+                player.energy = MAX_ENERGY;
 
                 hud_energy(player.energy);
                 break;
@@ -188,7 +196,6 @@ bool player_pickup(int16_t type) {
 Edge player_collide(void) {
     Tile head_edge_tile, body_edge_tile;
     int16_t head_tile, body_tile;
-    Edge edge = EdgeNone;
 
     Rect head_rect, body_rect;
     rect_set_pointer(&head_rect, player.point.x, player.point.y, player.size.w, player.size.h);

@@ -19,19 +19,30 @@
 
 gfx_context vctx;
 uint8_t buffer[WIDTH];
+uint8_t game_state = GAME_TITLE;
+uint8_t game_difficulty = 1;
+uint32_t high_score;
+static uint16_t input1_prev;
+static uint8_t fire_held;
+static uint8_t shot_tick;
+static uint8_t death_ticks;
+static void show_title(uint8_t game_over);
 
 int main(void)
 {
     init();
-reset:
-    reset();
-
+    uint8_t tick_phase = 0;
     while (true) {
         TSTATE_LOG(1);
         uint8_t action = input();
         if (action == ACTION_QUIT)
             goto quit_game;
-        update();
+        // PAL original: 50 logical ticks per second on the 60 Hz Zeal display.
+        tick_phase += 50;
+        if (tick_phase >= 60) {
+            tick_phase -= 60;
+            update();
+        }
         draw();
         TSTATE_LOG(1);
     }
@@ -150,6 +161,7 @@ void init(void)
     hud_energy(player.energy);
 #endif
 
+    show_title(0);
     gfx_enable_screen(1);
 }
 
@@ -178,70 +190,105 @@ void deinit(void)
 #endif
 }
 
-void reset(void)
-{
-    // reset your game state
+static void show_title(uint8_t game_over) {
+    game_state = GAME_TITLE;
+    fire_held = 0;
+    bullets_clear();
+    enemies_clear();
+    player.sprite_head->x = SCREEN_WIDTH + SPRITE_WIDTH;
+    player.sprite_body->x = SCREEN_WIDTH + SPRITE_WIDTH;
+    tilemap_fill(&vctx, LAYER0, 138, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
+    nprint_string_layer(&vctx, "ENIGMA", 6, LAYER0, 17, 10);
+    if (game_over) nprint_string_layer(&vctx, "GAME OVER", 9, LAYER0, 15, 12);
+    sprintf(buffer, "LEVEL: %d", game_difficulty);
+    nprint_string_layer(&vctx, buffer, 8, LAYER0, 16, 14);
+    nprint_string_layer(&vctx, "ARROWS: LEVEL  SPACE: START", 26, LAYER0, 7, 16);
 }
 
-static uint16_t input1_prev = 0;
-uint8_t input(void)
-{
+void reset(void) {
+    for (uint8_t i = 0; i < keys_len; i++) keys[i].flags = OBJECT_ACTIVE;
+    for (uint8_t i = 0; i < fuel_len; i++) fuel[i].flags = OBJECT_ACTIVE;
+    for (uint8_t i = 0; i < gates_len; i++) gates[i].flags |= OBJECT_ACTIVE;
+    bullets_clear();
+    player_reset();
+    shot_tick = 0;
+    fire_held = 0;
+    zos_err_t err = game_world_init();
+    handle_error(err, "start game", 1);
+    hud_lives(player.lives);
+    hud_keys(player.keys);
+    hud_score(player.score);
+    hud_energy(player.energy);
+    game_state = GAME_PLAYING;
+}
+
+uint8_t input(void) {
     uint16_t input1 = input_read();
-
-    if (input1 == input1_prev)
-        return 0;
+    uint16_t pressed = input1 & ~input1_prev;
     input1_prev = input1;
-
-    player.direction.x = DIRECTION_NONE;
-    player.direction.y = DIRECTION_NONE;
-    if (LEFT1)
-        player.direction.x = DIRECTION_LEFT;
-    if (RIGHT1)
-        player.direction.x = DIRECTION_RIGHT;
-    if (UP1)
-        player.direction.y = DIRECTION_UP;
-    if (DOWN1)
-        player.direction.y = DIRECTION_DOWN;
-
-    if (BUTTON1_B) {
-        if ((player.energy > 0) && bullet_shoot(&player.point, &player.direction)) {
-            player.energy--;
-            hud_energy(player.energy);
+    if (SELECT1) return ACTION_QUIT;
+    if (game_state == GAME_TITLE) {
+        if (pressed & (BUTTON_LEFT | BUTTON_UP)) {
+            game_difficulty = game_difficulty == 1 ? 4 : game_difficulty - 1;
+            show_title(0);
+        } else if (pressed & (BUTTON_RIGHT | BUTTON_DOWN)) {
+            game_difficulty = game_difficulty == 4 ? 1 : game_difficulty + 1;
+            show_title(0);
         }
+        if (pressed & BUTTON_B) reset();
+        return 0;
     }
-
-    if (SELECT1)
-        return ACTION_QUIT;
-
+    fire_held = (input1 & BUTTON_B) != 0;
+    vec2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
+    if (LEFT1) player.direction.x = DIRECTION_LEFT;
+    if (RIGHT1) player.direction.x = DIRECTION_RIGHT;
+    if (UP1) player.direction.y = DIRECTION_UP;
+    if (DOWN1) player.direction.y = DIRECTION_DOWN;
     return 0;
 }
 
-void update(void)
-{
+void update(void) {
+    if (game_state == GAME_TITLE) return;
+    if (game_state == GAME_DYING) {
+        if (--death_ticks) return;
+        if (!player.lives) {
+            show_title(1);
+        } else {
+            zos_err_t err = game_world_respawn();
+            handle_error(err, "respawn player", 1);
+            hud_energy(player.energy);
+            game_state = GAME_PLAYING;
+        }
+        return;
+    }
     bullet_move();
     enemies_move(&player.point);
-
     bool player_moved = player_move();
     player_animate();
-    if(player_moved) {
-        Edge map_edge = player_collide();
-        if (map_edge != EdgeNone) {
+    if (player_moved) {
+        Edge edge = player_collide();
+        if (edge != EdgeNone) {
             bullets_clear();
-            draw();
-            zos_err_t err = game_world_transition(map_edge);
+            zos_err_t err = game_world_transition(edge);
             handle_error(err, "change room", 1);
+            return;
         }
     }
-}
-
-void draw_paused(uint8_t paused)
-{
-    (void*) paused; // unreferenced
-}
-
-void draw_gameover(uint8_t gameover)
-{
-    (void*) gameover; // unreferenced
+    shot_tick ^= 1;
+    if (shot_tick && fire_held && player.energy && bullet_shoot(&player.point, &player.direction)) {
+        player.energy--;
+        hud_energy(player.energy);
+    }
+    if (enemies_touch_player(&player.point)) {
+        player.lives--;
+        hud_lives(player.lives);
+        bullets_clear();
+        vec2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
+        fire_held = 0;
+        game_state = GAME_DYING;
+        // Brief visible death pause; the original uses a palette/sound sequence.
+        death_ticks = 50;
+    }
 }
 
 void draw(void)

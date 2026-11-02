@@ -2,7 +2,7 @@
 #include <zvb_gfx.h>
 #include <zar.h>
 
-#define MAX_SPRITES   32
+#define MAX_SPRITES   64
 #define MAX_DATA_KB   6
 #define PALETTE_SIZE  16
 

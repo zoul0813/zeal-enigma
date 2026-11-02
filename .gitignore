@@ -14,3 +14,8 @@ assets/archive/
 zeal.ini
 
 src/enigma_assets.h
+
+# Local analysis artifacts.
+research/
+
+__pycache__/

@@ -43,23 +43,25 @@ void hud_score(uint32_t score)
     sprintf(buffer, "%08lu", score);
     nprint_string_layer(&vctx, buffer, 8, LAYER0, 9, 27);
 
-    // update hi-score?
-    sprintf(buffer, "%08lu", score);
+    if (score > high_score) high_score = score;
+    sprintf(buffer, "%08lu", high_score);
     nprint_string_layer(&vctx, buffer, 8, LAYER0, 30, 27);
 }
 
 void hud_lives(uint8_t lives)
 {
-    for (uint8_t i = 0; i < lives; i++) {
-        buffer[i] = HUD_LIFE;
+    for (uint8_t i = 0; i < MAX_LIVES; i++) {
+        buffer[i] = i < lives ? HUD_LIFE : 138;
     }
     gfx_tilemap_load(&vctx, buffer, MAX_LIVES, LAYER0, 9, 26);
 }
 
 void hud_energy(uint8_t energy)
 {
-    uint8_t full = energy / ENERGY_DIVIDER;     // 90 / 4 = 22.5
-    uint8_t partial = energy % ENERGY_DIVIDER;  // 90 % 4 = 2
+    // Retain the four-part gauge artwork while tracking the original 215 shots.
+    uint8_t gauge = (uint16_t)energy * (ENERGY_BARS * ENERGY_DIVIDER) / MAX_ENERGY;
+    uint8_t full = gauge / ENERGY_DIVIDER;
+    uint8_t partial = gauge % ENERGY_DIVIDER;
 
     uint8_t i;
     for(i = 0; i < full; i++) {
@@ -69,17 +71,17 @@ void hud_energy(uint8_t energy)
         buffer[i] = HUD_DRAINED + partial;
         i++;
     }
-    for(;i<MAX_ENERGY/ENERGY_DIVIDER;i++) {
+    for(;i<ENERGY_BARS;i++) {
         buffer[i] = HUD_DRAINED;
     }
     buffer[i] = HUD_DRAINED; // last bar
 
-    gfx_tilemap_load(&vctx, buffer, MAX_ENERGY/ENERGY_DIVIDER + 1, LAYER0, 10, 28);
+    gfx_tilemap_load(&vctx, buffer, ENERGY_BARS + 1, LAYER0, 10, 28);
 }
 
 void hud_keys(uint16_t keys)
 {
-    // tilemap_fill(&vctx, LAYER1, RED_GREY, 21, 26, 17, 1);
+    tilemap_fill(&vctx, LAYER1, RED_GREY, 21, 26, 17, 1);
     for (uint8_t i = 0; i < keys_len; i++) {
         if(keys & (1 << i)) {
             // we have this key?

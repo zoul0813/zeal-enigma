@@ -1,208 +1,165 @@
-#include <stdio.h>
-#include <zgdk/utils/print.h>
-
-#include <zgdk/types.h>
 #include <zgdk/sprites.h>
-#include <zgdk/tiles.h>
 #include <zgdk/tilemap.h>
 #include <zgdk/utils/rand.h>
-
 #include "assets.h"
 #include "enemies.h"
-#include "game_world.h"
+#include "player.h"
 
-enemy_t ENEMIES[MAX_ENEMIES];
-
-uint8_t ENEMY_ROOMS[WORLD_WIDTH * WORLD_HEIGHT] = {
-    3, 4, 3, 4, 3, 2, 4, 5,
-    4, 3, 4, 3, 5, 3, 6, 4,
-    3, 4, 3, 2, 4, 7, 3, 4,
-    3, 5, 3, 2, 4, 3, 8, 4,
-    3, 4, 6, 3, 4, 5, 3, 2,
-    4, 3, 7, 4, 3, 4, 3, 5,
-    3, 4, 3, 6, 4, 3, 4, 2,
-    3, 5, 4, 3, 4, 8, 3, 4
+/* Original C16 tables at $2380 and $2340. TMX reverses world Y, so
+ * translate the room index before looking up these packed difficulty values.
+ */
+static const uint8_t room_population[64] = {
+    0x58, 0x58, 0x58, 0x58, 0x6a, 0x47, 0x59, 0x5a,
+    0x4c, 0x5a, 0x4a, 0x5a, 0x6c, 0x5a, 0x6a, 0x46,
+    0x57, 0x4c, 0x36, 0x48, 0x5a, 0x79, 0x57, 0x57,
+    0x24, 0x58, 0x49, 0x47, 0x59, 0x68, 0x6f, 0x49,
+    0x57, 0x6a, 0x4b, 0x11, 0x45, 0x58, 0x47, 0x6b,
+    0x7e, 0x47, 0x47, 0x24, 0x68, 0xdf, 0xff, 0xac,
+    0x46, 0x46, 0x35, 0x46, 0x35, 0x8e, 0xaf, 0xcf,
+    0x69, 0x69, 0x58, 0x68, 0x8b, 0xbf, 0xff, 0xff,
 };
 
-error enemies_init(void)
-{
-    gfx_sprite sprite = {
-        .tile = ENEMY_INACTIVE,
-        .x = SCREEN_WIDTH + SPRITE_HEIGHT,
-        .y = SCREEN_HEIGHT / 2,
-    };
+static const uint8_t room_speed[64] = {
+    0x56, 0x9a, 0x69, 0x69, 0x56, 0xbf, 0x56, 0x5a,
+    0x66, 0x7b, 0x9a, 0x7b, 0x69, 0xdf, 0x7b, 0x9a,
+    0x9a, 0x5a, 0xaa, 0x9a, 0xaf, 0x69, 0x6a, 0x7b,
+    0x69, 0x9a, 0x56, 0x6a, 0x69, 0x59, 0x5a, 0x6a,
+    0x5f, 0x59, 0x55, 0x6a, 0x7f, 0x9a, 0x56, 0x69,
+    0x9a, 0xde, 0x7b, 0xaa, 0x6a, 0x69, 0x77, 0x5a,
+    0x5a, 0x6a, 0x6b, 0x99, 0xa6, 0xaf, 0xaf, 0xff,
+    0x5a, 0x67, 0x5a, 0x5a, 0x7f, 0xaf, 0xff, 0xff,
+};
 
-    uint8_t i;
-    for (i = 0; i < MAX_ENEMIES; i++) {
-        enemy_t* enemy   = &ENEMIES[i];
-        enemy->sprite_l  = sprites_register(sprite);
-        enemy->sprite_r  = sprites_register(sprite);
+enemy_t ENEMIES[MAX_ENEMIES];
+static uint8_t enemy_count;
+static uint8_t enemy_delay;
+static uint8_t enemy_tick;
+static uint8_t speed_x, speed_y;
 
-        vec2_set(enemy->direction, DIRECTION_NONE, DIRECTION_NONE);
+error enemies_init(void) {
+    gfx_sprite sprite = { .tile = ENEMY_INACTIVE, .flags = SPRITE_NONE };
+    for (uint8_t i = 0; i < MAX_ENEMIES; i++) {
+        enemy_t *enemy = &ENEMIES[i];
+        enemy->sprite_l = sprites_register(sprite);
+        enemy->sprite_r = sprites_register(sprite);
         rect_set_pointer(&enemy->rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
-        enemy_set_xy(enemy, WORLD_PLAYER_X, WORLD_PLAYER_Y);
-        vec2_copy_pointer(&enemy->last_point, &enemy->point);
     }
-
+    enemies_clear();
     return GFX_SUCCESS;
 }
 
-static uint8_t enemy_count = 0;
-void enemies_spawn(uint8_t roomId)
-{
-    if(roomId >= sizeof(ENEMY_ROOMS)) return;
-    enemy_count = ENEMY_ROOMS[roomId];
+void enemies_clear(void) {
+    enemy_count = 0;
+    for (uint8_t i = 0; i < MAX_ENEMIES; i++) enemy_destroy(&ENEMIES[i]);
+}
 
-    Vector2_u8* validSpawn = (Vector2_u8*)data;  // Use flat array
+void enemies_spawn(uint8_t room_id) {
+    enemies_clear();
+    if (room_id >= WORLD_WIDTH * WORLD_HEIGHT) return;
+    uint8_t original = (7 - room_id / WORLD_WIDTH) * WORLD_WIDTH + room_id % WORLD_WIDTH;
+    uint8_t population = room_population[original];
+    if (game_difficulty <= 2) population &= 15;
+    else population >>= 4;
+    uint8_t requested = population + 1;
+    uint8_t speed = room_speed[original];
+    if (game_difficulty & 1) speed >>= 4;
+    else speed &= 15;
+    // Original multicolor X units are twice as wide as Y pixels; our art is 2x.
+    speed_x = ((speed >> 2) & 3) * 4;
+    speed_y = (speed & 3) * 2;
+    enemy_delay = (5 - game_difficulty) * 16 + 1;
+    enemy_tick = 0;
 
-    uint16_t spawns = 0;
-    for(uint8_t row = 0; row < ROOM_HEIGHT; row++) {
-        for(uint8_t col = 0; col + 1 < ROOM_WIDTH; col++) {
-            if(tilemap_get_xy(col, row) == TILE_NONE && tilemap_get_xy(col + 1, row) == TILE_NONE) {
-                validSpawn[spawns].x = col + ROOM_OFFSET_X;
-                validSpawn[spawns].y = row + ROOM_OFFSET_Y;
-                spawns++;
-            }
+    Vector2_u8 *spawns = (Vector2_u8 *)data;
+    uint16_t count = 0;
+    uint8_t player_col = (player.point.x - SPRITE_WIDTH) / SPRITE_WIDTH;
+    uint8_t player_row = (player.point.y - SPRITE_HEIGHT - ROOM_TOP_PX) / SPRITE_HEIGHT;
+    for (uint8_t row = 0; row < ROOM_HEIGHT; row++) {
+        for (uint8_t col = 0; col + 1 < ROOM_WIDTH; col++) {
+            // The original excludes the player's 8x7-character map block.
+            if (col / 8 == player_col / 8 && row / 7 == player_row / 7) continue;
+            if (tilemap_get_xy(col, row) != TILE_NONE || tilemap_get_xy(col + 1, row) != TILE_NONE) continue;
+            spawns[count].x = col;
+            spawns[count++].y = row;
         }
     }
-
-    uint8_t i;
-    for(i = 0; i < enemy_count && spawns > 0; i++) {
-        enemy_t* enemy = &ENEMIES[i];
-        uint16_t r = (uint8_t)rand8();
-        r = (r << 8) | (uint8_t)rand8();
-        r %= spawns;
+    while (enemy_count < requested && count) {
+        uint16_t random = ((uint16_t)(uint8_t)rand8() << 8) | (uint8_t)rand8();
         Vector2_u8 spawn;
-        vec2_copy(spawn, validSpawn[r]);
-        Tile tile_l;
-        tile_at(spawn.x, spawn.y, &tile_l);
-
-        r &= 0x07;
-        if(r > 4) r -= 4;
-        r *= 4;
-        enemy->sprite_l->tile = ENEMY_INDEX + r;
-        enemy->sprite_r->tile = ENEMY_INDEX + r + 1;
-
-        enemy_set_point(enemy, &tile_l.rect.point);
-
-        // Remove every candidate whose two-tile footprint overlaps this enemy.
+        spawn = spawns[random % count];
+        enemy_t *enemy = &ENEMIES[enemy_count++];
+        enemy->type = (uint8_t)rand8() & 7;
+        enemy->sprite_l->tile = ENEMY_INDEX + enemy->type * 4;
+        enemy->sprite_r->tile = enemy->sprite_l->tile + 1;
+        enemy_set_xy(enemy, (spawn.x + ROOM_OFFSET_X + 1) * SPRITE_WIDTH,
+            (spawn.y + ROOM_OFFSET_Y + 1) * SPRITE_HEIGHT);
         uint16_t remaining = 0;
-        for(uint16_t j = 0; j < spawns; j++) {
+        for (uint16_t j = 0; j < count; j++) {
             Vector2_u8 candidate;
-            vec2_copy(candidate, validSpawn[j]);
-            if(candidate.y == spawn.y && candidate.x + 1 >= spawn.x && candidate.x <= spawn.x + 1)
-                continue;
-            validSpawn[remaining++] = candidate;
+            candidate = spawns[j];
+            if (candidate.y == spawn.y && candidate.x + 1 >= spawn.x && candidate.x <= spawn.x + 1) continue;
+            spawns[remaining++] = candidate;
         }
-        spawns = remaining;
-    }
-
-    enemy_count = i;
-    for (i = enemy_count; i < MAX_ENEMIES; i++) {
-        enemy_t* enemy        = &ENEMIES[i];
-        enemy_destroy(enemy);
+        count = remaining;
     }
 }
 
-static uint8_t enemy_last_moved = 0;
-void enemies_move(Point *player_point) {
-    enemy_last_moved++;
-    if(enemy_last_moved >= enemy_count) enemy_last_moved = 0;
-
-    uint8_t i;
-    enemy_t *enemy = NULL;
-    for(i = enemy_last_moved; i < enemy_count; i++) {
-        if(ENEMIES[i].sprite_l->tile != ENEMY_INACTIVE) {
-            enemy = &ENEMIES[i];
-            break;
-        }
-    }
-
-    enemy_last_moved = i;
-    if(enemy == NULL) return;
-
-    vec2_direction(&enemy->direction, player_point, &enemy->point);
-    vec2_copy_pointer(&enemy->last_point, &enemy->point);
-
-    // can't move
-    if(enemy->direction.x == 0 && enemy->direction.y == 0) return;
-
-    uint16_t x  = enemy->point.x;
-    uint16_t y  = enemy->point.y;
-    x          += (enemy->direction.x * ENEMY_SPEED);
-    y          += (enemy->direction.y * ENEMY_SPEED);
-
-    if (x < SPRITE_WIDTH)
-        x = SPRITE_WIDTH;
-    else if (x > SCREEN_WIDTH)
-        x = SCREEN_WIDTH;
-    if (y < SPRITE_HEIGHT)
-        y = SPRITE_HEIGHT;
-    else if (y > SCREEN_HEIGHT)
-        y = SCREEN_HEIGHT;
-
-    // didn't move
-    if((x == enemy->point.x) && (y == enemy->point.y)) return;
-
-    enemy_set_xy(enemy, x, y);
-    enemy_collide(enemy);
+/* Check the entire two-tile footprint in the logical room map. Axis moves are
+ * independent, so an enemy can slide along a wall, but cannot cross it. */
+static bool can_stand(int16_t x, int16_t y) {
+    if (x < (int16_t)(ROOM_LEFT_PX + SPRITE_WIDTH) || x + (int16_t)SPRITE_WIDTH > ROOM_RIGHT_PX ||
+        y < (int16_t)(ROOM_TOP_PX + SPRITE_HEIGHT) || y > (int16_t)ROOM_BOTTOM_PX) return false;
+    uint8_t left = (x - SPRITE_WIDTH) / SPRITE_WIDTH - ROOM_OFFSET_X;
+    uint8_t right = (x + SPRITE_WIDTH - 1) / SPRITE_WIDTH - ROOM_OFFSET_X;
+    uint8_t top = (y - SPRITE_HEIGHT) / SPRITE_HEIGHT - ROOM_OFFSET_Y;
+    uint8_t bottom = (y - 1) / SPRITE_HEIGHT - ROOM_OFFSET_Y;
+    for (uint8_t row = top; row <= bottom; row++)
+        for (uint8_t col = left; col <= right; col++)
+            if (tilemap_get_xy(col, row) != TILE_NONE) return false;
+    return true;
 }
 
-Edge enemy_collide(enemy_t *enemy) {
-    Tile left_edge_tile, right_edge_tile;
-    int16_t left_tile, right_tile;
-    Edge edge = EdgeNone;
-
-    Rect left_rect, right_rect;
-    rect_set_pointer(&left_rect, enemy->point.x, enemy->point.y, enemy->size.w, enemy->size.h);
-    rect_set_pointer(&right_rect, enemy->point.x, enemy->point.y, enemy->size.w, enemy->size.h);
-    right_rect.x += SPRITE_WIDTH;
-
-    if(enemy->direction.x < 0) {
-        if(tile_get_edge(&left_rect, EdgeLeft, &left_edge_tile)) {
-            left_tile = tilemap_get(&left_edge_tile.point);
-            if((left_tile < 0)) {
-                return EdgeLeft;
-            } else if((left_tile != 0)) {
-                enemy_set_xy(enemy, left_edge_tile.rect.x, enemy->point.y);
-            }
-        } else {
-            return EdgeLeft;
-        }
-    } else if(enemy->direction.x > 0) {
-        if(tile_get_edge(&right_rect, EdgeRight, &right_edge_tile)) {
-            right_tile = tilemap_get(&right_edge_tile.point);
-            if((right_tile < 0)) {
-                return EdgeRight;
-            } else if((right_tile != 0)) {
-                enemy_set_xy(enemy, right_edge_tile.rect.x - SPRITE_WIDTH, enemy->point.y);
-            }
-        }
+void enemies_move(Point *target) {
+    enemy_tick++;
+    bool waiting = enemy_delay != 0;
+    if (waiting) enemy_delay--;
+    if (enemy_tick & 1) return;
+    for (uint8_t i = 0; i < enemy_count; i++) {
+        enemy_t *enemy = &ENEMIES[i];
+        if (enemy->sprite_l->tile == ENEMY_INACTIVE) continue;
+        enemy->sprite_l->tile = ENEMY_INDEX + enemy->type * 4 + ((enemy_tick >> 3) & 1) * 2;
+        enemy->sprite_r->tile = enemy->sprite_l->tile + 1;
+        if (waiting) continue;
+        int16_t x = enemy->point.x, y = enemy->point.y;
+        // Original pursuit compares coarse X/Y buckets rather than pathfinding.
+        int16_t dx = (target->x - SPRITE_WIDTH) >> 4;
+        int16_t ex = (x - SPRITE_WIDTH) >> 4;
+        int16_t dy = (target->y - SPRITE_HEIGHT) >> 3;
+        int16_t ey = (y - SPRITE_HEIGHT) >> 3;
+        int16_t next = x + ((dx > ex) - (dx < ex)) * speed_x;
+        if (can_stand(next, y)) x = next;
+        next = y + ((dy > ey) - (dy < ey)) * speed_y;
+        if (can_stand(x, next)) y = next;
+        enemy_set_xy(enemy, x, y);
     }
+}
 
-    if(enemy->direction.y < 0) {
-        if(tile_get_edge(&left_rect, EdgeTop, &left_edge_tile) && tile_get_edge(&right_rect, EdgeTop, &right_edge_tile)) {
-            left_tile = tilemap_get(&left_edge_tile.point);
-            right_tile = tilemap_get(&right_edge_tile.point);
-            if((left_tile < 0) | (right_tile < 0)) {
-                return EdgeTop;
-            } else if((left_tile != TILE_NONE) || (right_tile != TILE_NONE)) {
-                enemy_set_xy(enemy, enemy->point.x, left_edge_tile.rect.y);
-            }
-        }
-    } else if(enemy->direction.y > 0) {
-        if(tile_get_edge(&left_rect, EdgeBottom, &left_edge_tile) && tile_get_edge(&right_rect, EdgeBottom, &right_edge_tile)) {
-            left_tile = tilemap_get(&left_edge_tile.point);
-            right_tile = tilemap_get(&right_edge_tile.point);
-            if((left_tile < 0) | (right_tile < 0)) {
-                return EdgeBottom;
-            } else if((left_tile != TILE_NONE) || (right_tile != TILE_NONE)) {
-                enemy_set_xy(enemy, enemy->point.x, left_edge_tile.rect.y);
-            }
-        }
+bool enemies_touch_player(const Point *point) {
+    for (uint8_t i = 0; i < enemy_count; i++) {
+        const enemy_t *enemy = &ENEMIES[i];
+        if (enemy->sprite_l->tile == ENEMY_INACTIVE) continue;
+        // Sprite coordinates are bottom-right. Player: one column, two rows;
+        // enemy: two columns, one row. Edge contact without overlap is safe.
+        if (point->x > enemy->point.x - SPRITE_WIDTH && point->x - SPRITE_WIDTH < enemy->point.x + SPRITE_WIDTH &&
+            point->y + SPRITE_HEIGHT > enemy->point.y - SPRITE_HEIGHT && point->y - SPRITE_HEIGHT < enemy->point.y)
+            return true;
     }
+    return false;
+}
 
-    return EdgeNone;
+uint16_t enemy_score(const enemy_t *enemy) {
+    static const uint16_t values[8] = { 10, 20, 40, 80, 100, 200, 400, 800 };
+    return values[enemy->type & 7];
 }
 
 void enemy_destroy(enemy_t *enemy) {

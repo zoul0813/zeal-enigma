@@ -11,8 +11,8 @@
 
 #define BULLET_TILE 13
 #define BULLET_INACTIVE TILE_NONE
-#define MAX_BULLETS    (4U)
-#define BULLET_SPEED   (5U)
+#define MAX_BULLETS    (8U)
+#define BULLET_SPEED   (16U)
 
 typedef struct {
     Direction direction;
