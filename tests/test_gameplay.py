@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory(prefix="enigma-gameplay-") as directory:
     for name in (
         "zvb_gfx.h", "zvb_sprite.h", "zar.h", "zos_errors.h",
         "zgdk/tilemap.h", "zgdk/sprites.h", "zgdk/tiles.h",
-        "zgdk/utils/print.h", "zgdk/utils/rand.h", "world/world.h",
+        "zgdk/utils/rand.h", "zgdk/rooms.h",
     ):
         header = temporary / name
         header.parent.mkdir(parents=True, exist_ok=True)

@@ -79,15 +79,15 @@ def release(emulator):
 
 
 def enter(emulator, x, y):
-    # Controlled entry through a real world_move/load/on_enter, using the same
+    # Controlled entry through a real rooms_move/load/on_enter, using the same
     # technique as the navigation regression checks. No loader is bypassed.
     release(emulator)
     if x:
-        emulator.write(symbol('world_position'), bytes((x-1, y)))
+        emulator.write(symbol('rooms_position'), bytes((x-1, y)))
         set_player(emulator, 637, 160)
         key = 'RIGHT'
     else:
-        emulator.write(symbol('world_position'), bytes((1, y)))
+        emulator.write(symbol('rooms_position'), bytes((1, y)))
         set_player(emulator, 17, 160)
         key = 'LEFT'
     previous = run_frames(emulator, 1)

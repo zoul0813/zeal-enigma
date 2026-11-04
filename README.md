@@ -1,6 +1,6 @@
-# Enigma using world.lib
+# Enigma using ZGDK rooms
 
-This working clone uses zeal-world-engine's `lib/world.lib` for room navigation,
+This game uses ZGDK room management in `zgdk.lib` for room navigation,
 world position, logical tilemap registration, and room loading coordination.
 `src/game_world.c` configures an 8x8 world with 40x21-tile rooms at tile offset
 (0,4), leaving space for the HUD. Transitions are immediate; the optional slide
@@ -13,21 +13,24 @@ the earlier Zeal port mixed tile offsets with pixel coordinates.
 
 ## Build
 
-With [ZDE](https://github.com/zoul0813/zeal-dev-environment) installed, run from
-the parent zeal-world-engine repository:
+With [ZDE](https://github.com/zoul0813/zeal-dev-environment) and a ZGDK build
+containing the world module, run from this checkout:
 
 ```sh
-zde --no-tty exec cmake -S /src -B /src/build
-zde --no-tty exec cmake --build /src/build --target world_engine
-zde --no-tty exec cmake -S /src/tmp/zeal-enigma -B /src/tmp/zeal-enigma/build
-zde --no-tty exec cmake --build /src/tmp/zeal-enigma/build
+zde --no-tty cmake
 ```
 
-The clone defaults to the engine two directories above it. For another layout,
-configure with `-DWORLD_ENGINE_PATH=/path/to/zeal-world-engine` using the path
-visible inside ZDE. Build the engine library first; Enigma links the prebuilt
-archive through the usual SDCC library options. Outputs are `bin/enigma`
-and `bin/enigma.zar`. CMake is the supported build; the legacy Makefile has been removed upstream.
+No separate world-engine checkout, `world.lib` build, or `WORLD_ENGINE_PATH` is
+required. CMake links only the SDK libraries. Outputs are `bin/enigma` and
+`bin/enigma.zar`. CMake is the supported build.
+
+For the sibling SDK clone, configure from `Projects/zeal` after building that
+clone's `zgdk.lib`:
+
+```sh
+zde --no-tty exec cmake --fresh -S /src/zeal-world-engine/tmp/zeal-enigma -B /src/zeal-world-engine/tmp/zeal-enigma/build -DZGDK_DIR=/src/zeal-game-dev-kit/cmake
+zde --no-tty exec cmake --build /src/zeal-world-engine/tmp/zeal-enigma/build --parallel 4
+```
 
 ## Run
 

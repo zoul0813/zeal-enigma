@@ -24,7 +24,7 @@ typedef struct { Point point; Rect rect; } Tile;
 
 typedef struct { uint8_t *tiles; Rect rect; } Tilemap;
 extern Tilemap *_TILEMAP;
-extern Vector2_u8 world_position;
+extern Vector2_u8 rooms_position;
 gfx_sprite *sprites_register(gfx_sprite);
 void sprite_set_xy(gfx_sprite *, uint16_t, uint16_t);
 uint8_t rand8(void);

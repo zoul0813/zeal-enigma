@@ -6,7 +6,6 @@
 #include <zgdk/tiles.h>
 
 #include <stdio.h>
-#include <zgdk/utils/print.h>
 
 #include "player.h"
 #include "bullet.h"

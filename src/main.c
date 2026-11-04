@@ -148,8 +148,8 @@ void init(void)
     handle_error(err, "initialize world", 1);
 
 #if DEBUG
-    sprintf(buffer, "%03d %03d %02d", world_position.x, world_position.y, ROOM_ID());
-    nprint_string_layer(&vctx, buffer, 10, LAYER0, 0, 0);
+    sprintf(buffer, "%03d %03d %02d", rooms_position.x, rooms_position.y, ROOM_ID());
+    hud_tilemap_nput_s_layer(&vctx, buffer, 10, LAYER0, 0, 0);
 #endif
 
 #if !defined(DEBUG) || DEBUG == 0
@@ -197,11 +197,11 @@ static void show_title(uint8_t game_over) {
     player.sprite_head->x = SCREEN_WIDTH + SPRITE_WIDTH;
     player.sprite_body->x = SCREEN_WIDTH + SPRITE_WIDTH;
     tilemap_fill(&vctx, LAYER0, 138, ROOM_OFFSET_X, ROOM_OFFSET_Y, ROOM_WIDTH, ROOM_HEIGHT);
-    nprint_string_layer(&vctx, "ENIGMA", 6, LAYER0, 17, 10);
-    if (game_over) nprint_string_layer(&vctx, "GAME OVER", 9, LAYER0, 15, 12);
+    hud_tilemap_nput_s_layer(&vctx, "ENIGMA", 6, LAYER0, 17, 10);
+    if (game_over) hud_tilemap_nput_s_layer(&vctx, "GAME OVER", 9, LAYER0, 15, 12);
     sprintf(buffer, "LEVEL: %d", game_difficulty);
-    nprint_string_layer(&vctx, buffer, 8, LAYER0, 16, 14);
-    nprint_string_layer(&vctx, "ARROWS: LEVEL  SPACE: START", 26, LAYER0, 7, 16);
+    hud_tilemap_nput_s_layer(&vctx, buffer, 8, LAYER0, 16, 14);
+    hud_tilemap_nput_s_layer(&vctx, "ARROWS: LEVEL  SPACE: START", 26, LAYER0, 7, 16);
 }
 
 void reset(void) {

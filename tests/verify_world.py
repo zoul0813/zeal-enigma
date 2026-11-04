@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Current-port world.lib integration checks using the headless Zeal emulator.
+"""Current-port ZGDK rooms integration checks using the headless Zeal emulator.
 
 These compare logical rooms with TMX terrain and live object state, not a
 historical executable snapshot. Player/enemy positions are controlled to test
@@ -132,8 +132,8 @@ def run():
         assert position(emulator) == (3,3)
         assert player_position(emulator) == (112,320)
         scene(emulator, check_population=True)
-        assert '_WORLD_TRANSITION_SLIDE' not in map_text and '_minimap_render' not in map_text
-        assert '_world_runtime' in map_text, 'world.lib core missing'
+        assert '_ROOMS_TRANSITION_SLIDE' not in map_text and '_minimap_render' not in map_text
+        assert '_rooms_runtime' in map_text, 'ZGDK rooms core missing'
 
         transition(emulator, 'LEFT')
         move_to_pickup(emulator, 185, 248, 'keys', 2 * 5 + 4)
@@ -168,12 +168,12 @@ def run():
         ]:
             hide_enemies(emulator)
             release_controls(emulator)
-            emulator.write(symbol('world_position'), bytes(grid))
+            emulator.write(symbol('rooms_position'), bytes(grid))
             set_player(emulator, *xy)
             emulator.command('press ' + direction)
             emulator.frame(); emulator.frame()
             assert position(emulator) == grid and player_position(emulator) == expected
-        print('PASS: target world.lib startup, 840-tile rooms/overlays, original enemy populations, keys/gates/fuel persistence, four-way transitions/arrivals, bullet clearing and world boundary clamping')
+        print('PASS: target ZGDK rooms startup, 840-tile rooms/overlays, original enemy populations, keys/gates/fuel persistence, four-way transitions/arrivals, bullet clearing and world boundary clamping')
     finally:
         emulator.close()
 

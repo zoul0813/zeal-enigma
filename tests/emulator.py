@@ -143,7 +143,7 @@ class Emulator:
 
 
 def position(emulator):
-    return tuple(emulator.read(symbol('world_position'), 2))
+    return tuple(emulator.read(symbol('rooms_position'), 2))
 
 
 def player_position(emulator):

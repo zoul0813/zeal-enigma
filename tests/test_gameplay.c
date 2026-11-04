@@ -9,7 +9,7 @@
 
 uint8_t data[MAX_DATA_KB * 1024];
 gfx_context vctx;
-Vector2_u8 world_position;
+Vector2_u8 rooms_position;
 uint8_t game_difficulty = 1;
 static gfx_sprite arena[MAX_SPRITES];
 static uint8_t registered;
@@ -234,8 +234,8 @@ static void test_player_reset_and_resources(void) {
     assert(player.lives == 3 && player.energy == 215);
     assert(player.direction.x == 0 && player.direction.y == 0);
     assert(player.point.x == WORLD_PLAYER_X && player.point.y == WORLD_PLAYER_Y);
-    world_position.x = fuel[0].room % WORLD_WIDTH;
-    world_position.y = fuel[0].room / WORLD_WIDTH;
+    rooms_position.x = fuel[0].room % WORLD_WIDTH;
+    rooms_position.y = fuel[0].room / WORLD_WIDTH;
     fuel[0].flags = OBJECT_ACTIVE;
     player.energy = 210;
     assert(player_pickup(FUEL_INDEX));

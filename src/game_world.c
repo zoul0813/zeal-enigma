@@ -1,9 +1,9 @@
 #include <stdio.h>
-#include <zgdk/utils/print.h>
+#include <zgdk/hud/tilemap.h>
 #include <zgdk/tilemap.h>
 #include <zgdk/tilemap/scroll.h>
-#include <world/world.h>
-#include <world/transitions.h>
+#include <zgdk/rooms.h>
+#include <zgdk/rooms/transitions.h>
 
 #include "game_world.h"
 #include "assets.h"
@@ -15,7 +15,7 @@ static uint8_t room_tiles[ROOM_WIDTH * ROOM_HEIGHT];
 static Point room_entry;
 static void room_entered(gfx_context* ctx, uint8_t x, uint8_t y, Edge edge);
 
-static const world_config_t world_config = {
+static const rooms_config_t rooms_config = {
     .size = { WORLD_WIDTH, WORLD_HEIGHT },
     .screen = { SCREEN_WIDTH, SCREEN_HEIGHT },
     .room = { .x = ROOM_OFFSET_X, .y = ROOM_OFFSET_Y, .w = ROOM_WIDTH, .h = ROOM_HEIGHT },
@@ -30,7 +30,7 @@ static const world_config_t world_config = {
 static void room_set_palette(void)
 {
     // palette swap
-    uint8_t palette_offset = ((world_position.x * world_position.y) % 9) + 4;
+    uint8_t palette_offset = ((rooms_position.x * rooms_position.y) % 9) + 4;
     uint16_t new_palette[2];
     new_palette[0] = palette[palette_offset];
     new_palette[1] = palette[(palette_offset + 1) % PALETTE_SIZE];
@@ -107,7 +107,7 @@ void room_set_tile(uint8_t x, uint8_t y, uint8_t tile)
     tilemap_set_xy(x, y, TILE_NONE);
 }
 
-/* Game-owned room entry: world.lib has committed the destination identity
+/* Game-owned room entry: ZGDK rooms has committed the destination identity
  * and registered its logical tiles before invoking this callback once. */
 static void room_entered(gfx_context* ctx, uint8_t x, uint8_t y, Edge edge) {
     (void)x; (void)y;
@@ -117,7 +117,7 @@ static void room_entered(gfx_context* ctx, uint8_t x, uint8_t y, Edge edge) {
     room_render_gate();
 
     sprintf(buffer, "%02d", ROOM_ID());
-    nprint_string_layer(ctx, buffer, 2, LAYER0, 0, HEIGHT - 1);
+    hud_tilemap_nput_s_layer(ctx, buffer, 2, LAYER0, 0, HEIGHT - 1);
 
     gfx_wait_vblank(ctx);
     switch (edge) {
@@ -134,20 +134,20 @@ static void room_entered(gfx_context* ctx, uint8_t x, uint8_t y, Edge edge) {
 
 zos_err_t game_world_init(void) {
     Vector2_u8 start = { WORLD_START_X, WORLD_START_Y };
-    return world_init(&vctx, &world_config, start);
+    return rooms_init(&vctx, &rooms_config, start);
 }
 
 zos_err_t game_world_respawn(void) {
     Vector2_u8 room;
-    room = world_position;
+    room = rooms_position;
     player_set_xy(room_entry.x, room_entry.y);
     vec2_set(player.direction, DIRECTION_NONE, DIRECTION_NONE);
     player.energy = MAX_ENERGY;
-    return world_init(&vctx, &world_config, room);
+    return rooms_init(&vctx, &rooms_config, room);
 }
 
 zos_err_t game_world_transition(Edge edge) {
-    int16_t moved = world_move(edge);
+    int16_t moved = rooms_move(edge);
     if (moved < 0) return (zos_err_t)-moved;
     if (!moved) {
         // Clamp to the actual room viewport, accounting for both player tiles.

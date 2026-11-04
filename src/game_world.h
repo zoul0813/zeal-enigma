@@ -1,6 +1,6 @@
 #include <zgdk/types.h>
 #include <zgdk/tilemap.h>
-#include <world/world.h>
+#include <zgdk/rooms.h>
 #include "main.h"
 
 #ifndef ENIGMA_GAME_WORLD_H
@@ -35,7 +35,7 @@
 #define WORLD_PLAYER_X (7 * SPRITE_WIDTH)
 #define WORLD_PLAYER_Y ((ROOM_OFFSET_Y + 16) * SPRITE_HEIGHT)
 
-#define ROOM_ID() ((world_position.y * WORLD_WIDTH) + world_position.x)
+#define ROOM_ID() ((rooms_position.y * WORLD_WIDTH) + rooms_position.x)
 
 typedef enum {
     TILE_NONE    = 0,   // player can move on this
