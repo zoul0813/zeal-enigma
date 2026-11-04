@@ -187,6 +187,9 @@ def profile(emulator, label, fixture_fn=None, limit=SAMPLES, stop_on_death=False
             phases[name] = cycles
             if name == 'gfx_wait_end_vblank':
                 emulator.command(f'bc {symbol(name)}')
+        if fixture_fn:
+            assert 'player_move' in phases, (label, 'Missing per-frame player update')
+            assert ('enemies_move' in phases) != ('bullet_move' in phases), (label, 'Actor phases must alternate')
         died = byte(emulator, 'game_state') == 2
         assert stop_on_death or not died, (label, 'Contact/death changed stress case')
         bullet_count = sum(emulator.read(sprite+4,1)[0] != 0 for sprite in getattr(fixture_fn, 'bullet_sprites', []))
@@ -194,7 +197,7 @@ def profile(emulator, label, fixture_fn=None, limit=SAMPLES, stop_on_death=False
                        'logic': phases['draw']-start,
                        'upload': phases['gfx_wait_end_vblank']-phases['sprites_render'],
                        'update': phases['draw']-phases['update'] if 'update' in phases else None,
-                       'bullets': phases['enemies_move']-phases['bullet_move'] if 'bullet_move' in phases else None,
+                       'bullets': phases.get('enemies_move', phases.get('player_move'))-phases['bullet_move'] if 'bullet_move' in phases else None,
                        'enemies': phases['player_move']-phases['enemies_move'] if 'enemies_move' in phases else None})
         start = cycles
         if died:
@@ -207,11 +210,16 @@ def profile(emulator, label, fixture_fn=None, limit=SAMPLES, stop_on_death=False
     result = {'name': label, 'frames': len(frames), 'ended_on_contact': died,
               'render_fps': round(CPU_HZ*len(frames)/sum(f['frame'] for f in frames), 3),
               'logic_hz': round(CPU_HZ*sum(f['update'] is not None for f in frames)/sum(f['frame'] for f in frames), 3),
+              'enemy_phase_hz': round(CPU_HZ*sum(f['enemies'] is not None for f in frames)/sum(f['frame'] for f in frames), 3),
+              'bullet_phase_hz': round(CPU_HZ*sum(f['bullets'] is not None for f in frames)/sum(f['frame'] for f in frames), 3),
               'over_1_5_video_frames': sum(f['frame'] > VIDEO_TSTATES*1.5 for f in frames)}
     for field in ('frame','logic','upload','update','bullets','enemies'):
         values = [f[field] for f in frames if f[field] is not None]
         if values:
             result[field] = summarize(values)
+    if fixture_fn:
+        enemy_frames = [f['enemies'] is not None for f in frames]
+        assert all(a != b for a,b in zip(enemy_frames,enemy_frames[1:])), 'Actor phase did not alternate'
     active = [f for f in frames if not f['waiting_for_enemies']]
     if active:
         result['after_entry_delay'] = dict(frames=len(active), render_fps=round(CPU_HZ*len(active)/sum(f['frame'] for f in active),3), worst_frame_ms=round(max(f['frame'] for f in active)/10000,4))

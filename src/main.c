@@ -31,18 +31,13 @@ static void show_title(uint8_t game_over);
 int main(void)
 {
     init();
-    uint8_t tick_phase = 0;
     while (true) {
         TSTATE_LOG(1);
         uint8_t action = input();
         if (action == ACTION_QUIT)
             goto quit_game;
-        // PAL original: 50 logical ticks per second on the 60 Hz Zeal display.
-        tick_phase += 50;
-        if (tick_phase >= 60) {
-            tick_phase -= 60;
-            update();
-        }
+        // One player/logic update per Zeal display frame (nominally 60 Hz).
+        update();
         draw();
         TSTATE_LOG(1);
     }
@@ -261,12 +256,16 @@ void update(void) {
             zos_err_t err = game_world_respawn();
             handle_error(err, "respawn player", 1);
             hud_energy(player.energy);
+            shot_tick = 0;
             game_state = GAME_PLAYING;
         }
         return;
     }
-    bullet_move();
-    enemies_move(&player.point);
+    // Split actor work across frames: projectiles on one, all enemies on the
+    // next. Player movement, contact checks and presentation stay at 60 Hz.
+    shot_tick ^= 1;
+    if (shot_tick) bullet_move();
+    else enemies_move(&player.point);
     bool player_moved = player_move();
     player_animate();
     if (player_moved) {
@@ -278,7 +277,6 @@ void update(void) {
             return;
         }
     }
-    shot_tick ^= 1;
     if (shot_tick && fire_held && player.energy && bullet_shoot(&player.point, &player.direction)) {
         player.energy--;
         hud_energy(player.energy);
@@ -291,7 +289,7 @@ void update(void) {
         fire_held = 0;
         game_state = GAME_DYING;
         // Brief visible death pause; the original uses a palette/sound sequence.
-        death_ticks = 50;
+        death_ticks = 60;
     }
 }
 

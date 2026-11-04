@@ -45,8 +45,9 @@ Enigma is based on the 1985 maze shooter by Mark J. Moore and Peter J. Bartlett,
 published by CBM UK.
 
 The port now uses the original per-room enemy population/speed tables and four
-difficulty levels. All active enemies pursue together on alternate 50 Hz logic
-ticks after a difficulty-dependent pause. Eight enemy appearances award the
+difficulty levels. Player logic follows the nominal 60 Hz Zeal display, while
+all enemies and all bullets run on opposite frames (about 30 Hz each), after a
+difficulty-dependent enemy entry pause. Eight enemy appearances award the
 original 10–800 points; keys award 5,000. Rooms repopulate after re-entry.
 
 Arrows select difficulty on the title screen; Space starts. During play, arrows
@@ -94,3 +95,7 @@ images are copied to a temporary directory before running. Logs are written to
 Run `python3 tests/profile_gameplay.py` to measure emulated 10 MHz CPU timing
 from the normal build without adding instrumentation. The profiler writes
 `build/profile-gameplay.json` and its debugger transcript.
+
+The 60/30 Hz schedule sustains about 59.64 rendered frames and player updates per
+second, with enemy and projectile passes at about 29.82 Hz each, in the controlled
+16-enemy/eight-projectile test. Room loading and spawning still cause entry stalls.

@@ -116,7 +116,7 @@ static void test_original_populations_and_spawns(void) {
 }
 
 static void test_delay_and_simultaneous_chase(void) {
-    static const unsigned pauses[] = {65, 49, 33, 17};
+    static const unsigned pauses[] = {32, 24, 16, 8};
     for (game_difficulty = 1; game_difficulty <= 4; game_difficulty++) {
         empty_room();
         enemies_spawn(27); /* Original room35: two enemies on every level. */
@@ -134,7 +134,7 @@ static void test_delay_and_simultaneous_chase(void) {
         assert(ENEMIES[0].point.x == 160 + step_x && ENEMIES[0].point.y == 164);
         assert(ENEMIES[1].point.x == 256 + step_x && ENEMIES[1].point.y == 164);
         enemies_move(&target);
-        assert(ENEMIES[0].point.x == 160 + step_x); /* Alternate-tick movement. */
+        assert(ENEMIES[0].point.x == 160 + 2 * step_x); /* Each call is one enemy pass. */
     }
 }
 
@@ -147,7 +147,7 @@ static void test_walls_and_contact(void) {
     /* Enemy's right edge meets column11 at x176; further X movement is blocked. */
     room[5][11] = TILE_WALL;
     Point target = {400, 220};
-    for (unsigned i = 0; i < 66; i++) enemies_move(&target);
+    for (unsigned i = 0; i < 33; i++) enemies_move(&target);
     assert(ENEMIES[0].point.x == 160);
     assert(ENEMIES[0].point.y == 164); /* Y pursuit continues beside the wall. */
     enemy_set_xy(&ENEMIES[0], 160, 160);

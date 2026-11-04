@@ -32,6 +32,7 @@ void enemies_spawn(uint8_t room_id);
 void enemies_clear(void);
 bool enemies_touch_player(const Point *point);
 uint16_t enemy_score(const enemy_t *enemy);
+/* One enemy pass, called by the game on alternate display frames (~30 Hz). */
 void enemies_move(Point *player_point);
 
 void enemy_destroy(enemy_t *enemy);
