@@ -17,6 +17,7 @@
 typedef struct {
     Direction direction;
     gfx_sprite *sprite;
+    uint8_t type; /* ENTITY_FREE or the game-defined live projectile type. */
 } bullet_t;
 
 extern bullet_t BULLETS[MAX_BULLETS];

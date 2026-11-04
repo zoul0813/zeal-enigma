@@ -6,6 +6,7 @@ historical executable snapshot. Player/enemy positions are controlled to test
 world ownership and persistent pickups independently of combat.
 """
 import struct
+from emulator import ENEMY_STRIDE, ENEMY_TAG, ENEMY_LEFT, ENEMY_RIGHT, BULLET_STRIDE, BULLET_SPRITE
 import xml.etree.ElementTree as ET
 from emulator import Emulator, ROOT, image_dir, map_text, symbol, position, player_position, set_player
 
@@ -21,13 +22,14 @@ def objects(emulator, name, count):
 
 
 def enemy_sprites(emulator):
-    enemies = emulator.read(symbol('ENEMIES'), 16 * 19)
-    return [(int.from_bytes(enemies[i + 15:i + 17], 'little'),
-             int.from_bytes(enemies[i + 17:i + 19], 'little')) for i in range(0, len(enemies), 19)]
+    enemies = emulator.read(symbol('ENEMIES'), 16 * ENEMY_STRIDE)
+    return [(int.from_bytes(enemies[i + ENEMY_LEFT:i + ENEMY_LEFT+2], 'little'),
+             int.from_bytes(enemies[i + ENEMY_RIGHT:i + ENEMY_RIGHT+2], 'little')) for i in range(0, len(enemies), ENEMY_STRIDE)]
 
 
 def hide_enemies(emulator):
-    for left, right in enemy_sprites(emulator):
+    for i, (left, right) in enumerate(enemy_sprites(emulator)):
+        emulator.write(symbol("ENEMIES") + i*ENEMY_STRIDE + ENEMY_TAG, b"\xff")
         emulator.write(left + 4, b'\0')
         emulator.write(right + 4, b'\0')
 
@@ -153,8 +155,8 @@ def run():
         assert objects(emulator, 'keys', 9)[2]['flags'] == 0
         assert objects(emulator, 'fuel', 38)[fuel_index]['flags'] == 0
         scene(emulator)  # Room reload preserves removed pickups and unlocked gates.
-        bullets = emulator.read(symbol('BULLETS'), 8 * 4)
-        assert all(emulator.read(int.from_bytes(bullets[i + 2:i + 4], 'little') + 4, 1)[0] == 0 for i in range(0, len(bullets), 4))
+        bullets = emulator.read(symbol('BULLETS'), 8 * BULLET_STRIDE)
+        assert all(emulator.read(int.from_bytes(bullets[i + BULLET_SPRITE:i + BULLET_SPRITE+2], 'little') + 4, 1)[0] == 0 for i in range(0, len(bullets), BULLET_STRIDE))
 
         # Isolate world-boundary clamping from terrain and navigation by placing
         # the world identity at each grid edge while retaining the room viewport.

@@ -3,6 +3,7 @@
 safe disk-copy/debugger harness. No C64/C16 or old Zeal baseline is asserted.
 """
 import struct
+from emulator import ENEMY_STRIDE, ENEMY_TAG, ENEMY_LEFT, ENEMY_RIGHT
 from emulator import Emulator, symbol, position, player_position, set_player
 
 
@@ -11,12 +12,13 @@ def byte(emulator, name, offset=0):
 
 
 def enemy_sprite(emulator, index, right=False):
-    offset = 17 if right else 15
-    return int.from_bytes(emulator.read(symbol('ENEMIES') + index * 19 + offset, 2), 'little')
+    offset = ENEMY_RIGHT if right else ENEMY_LEFT
+    return int.from_bytes(emulator.read(symbol('ENEMIES') + index * ENEMY_STRIDE + offset, 2), 'little')
 
 
 def hide_enemies(emulator):
     for i in range(16):
+        emulator.write(symbol('ENEMIES') + i*ENEMY_STRIDE + ENEMY_TAG, b'\xff')
         for right in (False, True):
             emulator.write(enemy_sprite(emulator, i, right) + 4, b'\0')
 
@@ -49,6 +51,7 @@ def force_contact(emulator):
     hide_enemies(emulator)
     player = player_position(emulator)
     emulator.write(symbol('ENEMIES'), struct.pack('<HH', *player))
+    emulator.write(symbol('ENEMIES') + ENEMY_TAG, b'\0')
     emulator.write(enemy_sprite(emulator, 0), struct.pack('<HHB', *player, 48))
     emulator.write(enemy_sprite(emulator, 0, True), struct.pack('<HHB', player[0] + 16, player[1], 49))
     until_state(emulator, 2, 4)
@@ -65,6 +68,7 @@ def run():
         assert emulator.pc() == symbol('draw'), 'Initialization failed'
         assert byte(emulator, 'game_state') == 0
         assert byte(emulator, 'game_difficulty') == 1
+        advance(emulator, 4)  # Let the SDK observe neutral input after startup.
         press(emulator, 'RIGHT')
         assert byte(emulator, 'game_difficulty') == 2
         press(emulator, 'LEFT')

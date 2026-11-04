@@ -1,7 +1,6 @@
 """Exercise real gameplay code on the host; hardware is replaced with a room map.
 
-ZGDK_PATH can select a checkout of the SDK used by the target build. Only its
-plain geometry/type definitions are reused; no target libraries execute here.
+ZGDK_PATH can select a checkout of the SDK used by the target build. Its portable grid helper and entity pools run alongside the gameplay.
 """
 from pathlib import Path
 import os
@@ -25,12 +24,18 @@ with tempfile.TemporaryDirectory(prefix="enigma-gameplay-") as directory:
         header.parent.mkdir(parents=True, exist_ok=True)
         header.write_text('#include "gameplay_platform.h"\n')
     shutil.copyfile(sdk / "include/zgdk/types.h", temporary / "zgdk/types.h")
+    enemies = temporary / "enemies.c"
+    enemies.write_text('#include "' + str(root / 'src/enemies.c') + '"\n'
+                      'bool test_enemy_can_stand(int16_t x, int16_t y) { return can_stand(x,y); }\n')
     executable = temporary / "test_gameplay"
     subprocess.run([
         os.environ.get("CC", "cc"), "-std=gnu99", "-Wall", "-Wextra", "-Werror",
         "-fsanitize=address,undefined", "-I", str(temporary),
         "-I", str(root / "tests"), "-I", str(root / "src"),
-        *(str(root / "src" / name) for name in ("enemies.c", "bullet.c", "player.c", "objects.c")),
+        "-I", str(sdk / "include"),
+        str(enemies),
+        *(str(sdk / "src/entities" / name) for name in ("init.c", "alloc.c", "free.c", "clear.c")),
+        *(str(root / "src" / name) for name in ("bullet.c", "player.c", "objects.c")),
         str(root / "tests/test_gameplay.c"), "-o", str(executable),
     ], check=True)
     subprocess.run([str(executable)], cwd=root, check=True)

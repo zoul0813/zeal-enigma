@@ -1,5 +1,6 @@
 #include <zgdk/sprites.h>
 #include <zgdk/tilemap.h>
+#include <zgdk/utils/grid_rows.h>
 #include <zgdk/utils/rand.h>
 #include "assets.h"
 #include "enemies.h"
@@ -30,32 +31,43 @@ static const uint8_t room_speed[64] = {
     0x5a, 0x67, 0x5a, 0x5a, 0x7f, 0xaf, 0xff, 0xff,
 };
 
+/* The logical map already classifies gameplay cells. Retain row pointers,
+ * not copied cells: removing pickups/gates is immediately visible. */
+static const uint8_t *room_rows[ROOM_HEIGHT];
+
 enemy_t ENEMIES[MAX_ENEMIES];
-static uint8_t enemy_count;
+entity_pool_t enemy_pool;
 static uint8_t enemy_delay;
 static uint8_t enemy_tick;
 static uint8_t speed_x, speed_y;
 
 error enemies_init(void) {
+    zos_err_t err = entity_pool_init(&enemy_pool, ENEMIES, MAX_ENEMIES,
+                                     sizeof(enemy_t), offsetof(enemy_t, type));
+    if (err != ERR_SUCCESS) return err;
     gfx_sprite sprite = { .tile = ENEMY_INACTIVE, .flags = SPRITE_NONE };
     for (uint8_t i = 0; i < MAX_ENEMIES; i++) {
         enemy_t *enemy = &ENEMIES[i];
         enemy->sprite_l = sprites_register(sprite);
+        if (enemy->sprite_l == NULL) return ERR_NO_MORE_MEMORY;
         enemy->sprite_r = sprites_register(sprite);
-        rect_set_pointer(&enemy->rect, 0, 0, SPRITE_WIDTH, SPRITE_HEIGHT);
+        if (enemy->sprite_r == NULL) return ERR_NO_MORE_MEMORY;
     }
     enemies_clear();
     return GFX_SUCCESS;
 }
 
 void enemies_clear(void) {
-    enemy_count = 0;
-    for (uint8_t i = 0; i < MAX_ENEMIES; i++) enemy_destroy(&ENEMIES[i]);
+    enemy_t *enemy;
+    ENTITY_POOL_FOR_EACH(&enemy_pool, enemy, type) {
+        enemy_destroy(enemy);
+    }
 }
 
 void enemies_spawn(uint8_t room_id) {
     enemies_clear();
     if (room_id >= WORLD_WIDTH * WORLD_HEIGHT) return;
+    grid_rows_init(room_rows, _TILEMAP->tiles, ROOM_WIDTH, ROOM_HEIGHT);
     uint8_t original = (7 - room_id / WORLD_WIDTH) * WORLD_WIDTH + room_id % WORLD_WIDTH;
     uint8_t population = room_population[original];
     if (game_difficulty <= 2) population &= 15;
@@ -83,12 +95,14 @@ void enemies_spawn(uint8_t room_id) {
             spawns[count++].y = row;
         }
     }
-    while (enemy_count < requested && count) {
+    uint8_t spawned = 0;
+    while (spawned < requested && count) {
         uint16_t random = ((uint16_t)(uint8_t)rand8() << 8) | (uint8_t)rand8();
         Vector2_u8 spawn;
         spawn = spawns[random % count];
-        enemy_t *enemy = &ENEMIES[enemy_count++];
-        enemy->type = (uint8_t)rand8() & 7;
+        enemy_t *enemy = entity_pool_alloc(&enemy_pool, (uint8_t)rand8() & 7);
+        if (enemy == NULL) break;
+        ++spawned;
         enemy->sprite_l->tile = ENEMY_INDEX + enemy->type * 4;
         enemy->sprite_r->tile = enemy->sprite_l->tile + 1;
         enemy_set_xy(enemy, (spawn.x + ROOM_OFFSET_X + 1) * SPRITE_WIDTH,
@@ -109,13 +123,17 @@ void enemies_spawn(uint8_t room_id) {
 static bool can_stand(int16_t x, int16_t y) {
     if (x < (int16_t)(ROOM_LEFT_PX + SPRITE_WIDTH) || x + (int16_t)SPRITE_WIDTH > ROOM_RIGHT_PX ||
         y < (int16_t)(ROOM_TOP_PX + SPRITE_HEIGHT) || y > (int16_t)ROOM_BOTTOM_PX) return false;
-    uint8_t left = (x - SPRITE_WIDTH) / SPRITE_WIDTH - ROOM_OFFSET_X;
-    uint8_t right = (x + SPRITE_WIDTH - 1) / SPRITE_WIDTH - ROOM_OFFSET_X;
-    uint8_t top = (y - SPRITE_HEIGHT) / SPRITE_HEIGHT - ROOM_OFFSET_Y;
-    uint8_t bottom = (y - 1) / SPRITE_HEIGHT - ROOM_OFFSET_Y;
-    for (uint8_t row = top; row <= bottom; row++)
-        for (uint8_t col = left; col <= right; col++)
-            if (tilemap_get_xy(col, row) != TILE_NONE) return false;
+    uint8_t left = (uint16_t)(x - SPRITE_WIDTH - ROOM_LEFT_PX) >> 4;
+    uint8_t right = (uint16_t)(x + SPRITE_WIDTH - 1 - ROOM_LEFT_PX) >> 4;
+    uint8_t top = (uint16_t)(y - SPRITE_HEIGHT - ROOM_TOP_PX) >> 4;
+    uint8_t bottom = (uint16_t)(y - 1 - ROOM_TOP_PX) >> 4;
+    for (uint8_t row = top; row <= bottom; ++row) {
+        const uint8_t *cell = room_rows[row] + left;
+        const uint8_t *end = room_rows[row] + right + 1;
+        while (cell < end) {
+            if (*cell++ != TILE_NONE) return false;
+        }
+    }
     return true;
 }
 
@@ -124,30 +142,28 @@ void enemies_move(Point *target) {
     bool waiting = enemy_delay != 0;
     if (waiting) enemy_delay--;
     if (enemy_tick & 1) return;
-    for (uint8_t i = 0; i < enemy_count; i++) {
-        enemy_t *enemy = &ENEMIES[i];
-        if (enemy->sprite_l->tile == ENEMY_INACTIVE) continue;
+    int16_t dx = (target->x - SPRITE_WIDTH) >> 4;
+    int16_t dy = (target->y - SPRITE_HEIGHT) >> 3;
+    enemy_t *enemy;
+    ENTITY_POOL_FOR_EACH(&enemy_pool, enemy, type) {
         enemy->sprite_l->tile = ENEMY_INDEX + enemy->type * 4 + ((enemy_tick >> 3) & 1) * 2;
         enemy->sprite_r->tile = enemy->sprite_l->tile + 1;
         if (waiting) continue;
         int16_t x = enemy->point.x, y = enemy->point.y;
         // Original pursuit compares coarse X/Y buckets rather than pathfinding.
-        int16_t dx = (target->x - SPRITE_WIDTH) >> 4;
         int16_t ex = (x - SPRITE_WIDTH) >> 4;
-        int16_t dy = (target->y - SPRITE_HEIGHT) >> 3;
         int16_t ey = (y - SPRITE_HEIGHT) >> 3;
-        int16_t next = x + ((dx > ex) - (dx < ex)) * speed_x;
+        int16_t next = x + (dx > ex ? speed_x : dx < ex ? -(int16_t)speed_x : 0);
         if (can_stand(next, y)) x = next;
-        next = y + ((dy > ey) - (dy < ey)) * speed_y;
+        next = y + (dy > ey ? speed_y : dy < ey ? -(int16_t)speed_y : 0);
         if (can_stand(x, next)) y = next;
         enemy_set_xy(enemy, x, y);
     }
 }
 
 bool enemies_touch_player(const Point *point) {
-    for (uint8_t i = 0; i < enemy_count; i++) {
-        const enemy_t *enemy = &ENEMIES[i];
-        if (enemy->sprite_l->tile == ENEMY_INACTIVE) continue;
+    enemy_t *enemy;
+    ENTITY_POOL_FOR_EACH(&enemy_pool, enemy, type) {
         // Sprite coordinates are bottom-right. Player: one column, two rows;
         // enemy: two columns, one row. Edge contact without overlap is safe.
         if (point->x > enemy->point.x - SPRITE_WIDTH && point->x - SPRITE_WIDTH < enemy->point.x + SPRITE_WIDTH &&
@@ -163,6 +179,7 @@ uint16_t enemy_score(const enemy_t *enemy) {
 }
 
 void enemy_destroy(enemy_t *enemy) {
+    entity_pool_free(&enemy_pool, enemy);
     enemy->sprite_l->tile = ENEMY_INACTIVE;
     enemy->sprite_r->tile = ENEMY_INACTIVE;
     enemy->sprite_l->x = SCREEN_WIDTH + SPRITE_WIDTH;

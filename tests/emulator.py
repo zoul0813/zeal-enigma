@@ -13,6 +13,9 @@ import subprocess
 import tempfile
 import time
 
+from target_layout import (ENEMY_STRIDE, ENEMY_TAG, ENEMY_LEFT, ENEMY_RIGHT,
+                           BULLET_STRIDE, BULLET_SPRITE, BULLET_TAG)
+
 ROOT = Path(__file__).resolve().parents[1]
 image_dir = ROOT / 'bin'
 map_path = ROOT / 'debug/enigma.map'

@@ -12,6 +12,7 @@ import re
 import shutil
 import statistics
 import struct
+from emulator import ENEMY_STRIDE, ENEMY_LEFT, ENEMY_RIGHT, BULLET_STRIDE, BULLET_SPRITE, BULLET_TAG
 from emulator import Emulator, ROOT, symbol, position, set_player
 
 CPU_HZ = 10_000_000
@@ -54,10 +55,10 @@ def byte(emulator, name, offset=0):
 
 
 def actors(emulator):
-    raw = emulator.read(symbol('ENEMIES'), 16 * 19)
-    return [(symbol('ENEMIES') + i * 19,
-             int.from_bytes(raw[i*19+15:i*19+17], 'little'),
-             int.from_bytes(raw[i*19+17:i*19+19], 'little')) for i in range(16)]
+    raw = emulator.read(symbol('ENEMIES'), 16 * ENEMY_STRIDE)
+    return [(symbol('ENEMIES') + i * ENEMY_STRIDE,
+             int.from_bytes(raw[i*ENEMY_STRIDE+ENEMY_LEFT:i*ENEMY_STRIDE+ENEMY_LEFT+2], 'little'),
+             int.from_bytes(raw[i*ENEMY_STRIDE+ENEMY_RIGHT:i*ENEMY_STRIDE+ENEMY_RIGHT+2], 'little')) for i in range(16)]
 
 
 def active_count(emulator, enemies):
@@ -136,10 +137,9 @@ def fixture(emulator, enemies, bullets=False):
     target = ((player_tile[0]+1)*16, (player_tile[1]+5)*16)
     choices = sorted(free, key=lambda p: abs(p[0]-player_tile[0])+abs(p[1]-player_tile[1]), reverse=True)
     chosen = choices[:16]
-    bullet_raw = emulator.read(symbol('BULLETS'), 32)
-    bullet_sprites = [int.from_bytes(bullet_raw[i*4+2:i*4+4], 'little') for i in range(8)]
-    count = emulator.read(private('enemies', 'enemy_count', 'ENEMIES'), 1)[0]
-    assert count == active_count(emulator, enemies), 'Private-state symbols do not match active enemies'
+    bullet_raw = emulator.read(symbol('BULLETS'), 8 * BULLET_STRIDE)
+    bullet_sprites = [int.from_bytes(bullet_raw[i*BULLET_STRIDE+BULLET_SPRITE:i*BULLET_STRIDE+BULLET_SPRITE+2], 'little') for i in range(8)]
+    count = active_count(emulator, enemies)
     delay = private('enemies', 'enemy_delay', 'ENEMIES')
     def reset():
         set_player(emulator, *target)
@@ -151,9 +151,14 @@ def fixture(emulator, enemies, bullets=False):
             emulator.write(left, struct.pack('<HHB', y, x, 48+(index&7)*4))
             emulator.write(right, struct.pack('<HHB', y, x+16, 49+(index&7)*4))
         if bullets:
+            # Set a valid pool high-water mark and live tags for the synthetic
+            # eight-projectile workload, retaining actual sprite reservations.
+            emulator.write(private('bullet', 'bullet_pool', 'BULLETS') + 2,
+                           struct.pack('<H', symbol('BULLETS') + 8 * BULLET_STRIDE))
             # Eight non-hitting in-flight bullets exercise all enemy hit tests.
             for i, sprite in enumerate(bullet_sprites):
-                emulator.write(symbol('BULLETS') + i*4, bytes((1, 0)))
+                emulator.write(symbol('BULLETS') + i*BULLET_STRIDE, bytes((1, 0)))
+                emulator.write(symbol('BULLETS') + i*BULLET_STRIDE + BULLET_TAG, b'\0')
                 emulator.write(sprite, struct.pack('<HHB', target[1], target[0], 13))
     reset.bullet_sprites = bullet_sprites if bullets else []
     return reset, count

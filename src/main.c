@@ -74,7 +74,8 @@ void init(void)
 
     rand8_seed(rand8_quick());
 
-    sprites_register_arena(SPRITE_ARENA, MAX_SPRITES);
+    err = sprites_register_arena(SPRITE_ARENA, MAX_SPRITES);
+    handle_error(err, "register sprite arena", 1);
 
     ascii_map(' ', 1, 138); // empty tile after Z
     ascii_map('A', 16, 112);
@@ -90,6 +91,9 @@ void init(void)
 
     err = gfx_initialize(ZVB_CTRL_VID_MODE_GFX_640_4BIT, &vctx);
     handle_error(err, "init graphics", 1);
+
+    err = sprites_clear(&vctx);
+    handle_error(err, "clear sprites", 1);
 
     tilemap_fill(&vctx, LAYER0, 0, 0, 0, WIDTH, HEIGHT); // clear all layer0 memory
     tilemap_fill(&vctx, LAYER1, 0, 0, 0, WIDTH, HEIGHT);

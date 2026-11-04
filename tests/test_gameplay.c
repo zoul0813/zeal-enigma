@@ -13,13 +13,16 @@ Vector2_u8 world_position;
 uint8_t game_difficulty = 1;
 static gfx_sprite arena[MAX_SPRITES];
 static uint8_t registered;
+static uint8_t sprite_limit = MAX_SPRITES;
 static uint8_t room[ROOM_HEIGHT][ROOM_WIDTH];
+static Tilemap test_map = { .tiles = &room[0][0], .rect = { .w = ROOM_WIDTH, .h = ROOM_HEIGHT } };
+Tilemap *_TILEMAP = &test_map;
 static uint16_t random_state = 1;
 static uint32_t shown_score;
 
 /* Real ZGDK geometry types, deterministic sprite storage and logical tilemap. */
 gfx_sprite *sprites_register(gfx_sprite sprite) {
-    assert(registered < MAX_SPRITES);
+    if (registered == sprite_limit) return NULL;
     arena[registered] = sprite;
     return &arena[registered++];
 }
@@ -174,8 +177,8 @@ static void test_weapons_and_scores(void) {
     assert(active_bullets() == 0);
     for (unsigned type = 0; type < 8; type++) {
         enemies_clear();
-        enemy_t *enemy = &ENEMIES[0];
-        enemy->type = type;
+        enemy_t *enemy = entity_pool_alloc(&enemy_pool, type);
+        assert(enemy == &ENEMIES[0]);
         enemy_set_xy(enemy, 192, 160);
         enemy->sprite_l->tile = ENEMY_INDEX + 4 * type;
         assert(enemy_score(enemy) == awards[type]);
@@ -191,7 +194,7 @@ static void test_weapons_and_scores(void) {
     }
     // Projectiles stop at terrain, including when an enemy is directly behind it.
     enemies_clear();
-    ENEMIES[0].type = 0;
+    assert(entity_pool_alloc(&enemy_pool, 0) == &ENEMIES[0]);
     ENEMIES[0].sprite_l->tile = ENEMY_INDEX;
     enemy_set_xy(&ENEMIES[0], 192, 160);
     room[5][11] = TILE_WALL;
@@ -247,7 +250,92 @@ static void test_player_reset_and_resources(void) {
     assert(!player_pickup(KEYS_INDEX + keys_len)); /* No tenth-key out-of-bounds read. */
 }
 
+/* Independent footprint oracle: all covered logical cells, including the
+ * middle of an unaligned 32px enemy. Mutate cells after caching to catch stale
+ * copies when a key/fuel/gate disappears. */
+extern bool test_enemy_can_stand(int16_t, int16_t);
+static void test_cached_collision(void) {
+    empty_room();
+    enemies_spawn(27);
+    /* Each covered cell must block independently, especially the middle of
+     * a three-column footprint that a corner-only optimization would miss. */
+    for (int16_t dx = 0; dx < 16; ++dx) {
+        for (int16_t dy = 0; dy < 16; ++dy) {
+            int16_t x = 160 + dx, y = 160 + dy;
+            assert(test_enemy_can_stand(x,y));
+            for (unsigned row = (y-16-ROOM_TOP_PX)/16; row <= (y-1-ROOM_TOP_PX)/16; ++row) {
+                for (unsigned col = (x-16)/16; col <= (unsigned)(x+15)/16; ++col) {
+                    room[row][col] = TILE_UNKNOWN;
+                    assert(!test_enemy_can_stand(x,y));
+                    room[row][col] = TILE_NONE;
+                    assert(test_enemy_can_stand(x,y));
+                }
+            }
+        }
+    }
+    uint32_t seed = 17;
+    for (unsigned n = 0; n < 20000; ++n) {
+        seed = seed * 1664525u + 1013904223u;
+        int16_t x = (seed >> 16) % 700 - 30;
+        seed = seed * 1664525u + 1013904223u;
+        int16_t y = (seed >> 16) % 520 - 30;
+        unsigned cell = seed % (ROOM_WIDTH * ROOM_HEIGHT);
+        room[cell / ROOM_WIDTH][cell % ROOM_WIDTH] = (seed & 0x100) ? (uint8_t)(seed >> 24) : TILE_NONE;
+        bool expected = x >= ROOM_LEFT_PX + 16 && x + 16 <= ROOM_RIGHT_PX &&
+                        y >= (int16_t)(ROOM_TOP_PX + 16) && y <= (int16_t)ROOM_BOTTOM_PX;
+        if (expected) {
+            unsigned left = (x-16-ROOM_LEFT_PX)/16, right = (x+15-ROOM_LEFT_PX)/16;
+            unsigned top = (y-16-ROOM_TOP_PX)/16, bottom = (y-1-ROOM_TOP_PX)/16;
+            for (unsigned row = top; row <= bottom; ++row)
+                for (unsigned col = left; col <= right; ++col)
+                    if (room[row][col] != TILE_NONE) expected = false;
+        }
+        assert(test_enemy_can_stand(x,y) == expected);
+    }
+}
+
+static void test_entity_lifecycle(void) {
+    empty_room();
+    game_difficulty = 1;
+    enemies_spawn(7);
+    gfx_sprite *left = ENEMIES[7].sprite_l, *right = ENEMIES[7].sprite_r;
+    enemy_destroy(&ENEMIES[7]);
+    assert(ENEMIES[7].type == ENTITY_FREE);
+    assert(left->tile == ENEMY_INACTIVE && right->tile == ENEMY_INACTIVE);
+    enemy_t *reused = entity_pool_alloc(&enemy_pool, 3);
+    assert(reused == &ENEMIES[7]);
+    assert(reused->sprite_l == left && reused->sprite_r == right);
+    /* Allocation tags own lifetime, independently of the displayed tile. */
+    enemies_move(&player.point);
+    enemies_move(&player.point);
+    assert(left->tile >= ENEMY_INDEX);
+    enemies_clear();
+    for (unsigned i = 0; i < MAX_ENEMIES; ++i) {
+        assert(ENEMIES[i].type == ENTITY_FREE);
+        assert(ENEMIES[i].sprite_l->tile == ENEMY_INACTIVE);
+        assert(ENEMIES[i].sprite_r->tile == ENEMY_INACTIVE);
+    }
+}
+
+static void test_sprite_exhaustion(void) {
+    for (sprite_limit = 0; sprite_limit < 2; ++sprite_limit) {
+        registered = 0;
+        assert(player_init() == ERR_NO_MORE_MEMORY);
+    }
+    for (sprite_limit = 0; sprite_limit < MAX_BULLETS; ++sprite_limit) {
+        registered = 0;
+        assert(bullet_init() == ERR_NO_MORE_MEMORY);
+    }
+    for (sprite_limit = 0; sprite_limit < 2 * MAX_ENEMIES; ++sprite_limit) {
+        registered = 0;
+        assert(enemies_init() == ERR_NO_MORE_MEMORY);
+    }
+    sprite_limit = MAX_SPRITES;
+    registered = 0;
+}
+
 int main(void) {
+    test_sprite_exhaustion();
     assert(player_init() == ERR_SUCCESS);
     assert(bullet_init() == ERR_SUCCESS);
     assert(enemies_init() == ERR_SUCCESS);
@@ -257,6 +345,8 @@ int main(void) {
     test_walls_and_contact();
     test_weapons_and_scores();
     test_player_reset_and_resources();
-    puts("PASS: original populations/difficulty, delayed simultaneous pursuit, walls/contact, weapons, scores, reset and pickups");
+    test_cached_collision();
+    test_entity_lifecycle();
+    puts("PASS: original populations/difficulty, delayed simultaneous pursuit, walls/contact, weapons, scores, reset/pickups, 20,000 cached footprints, sprite exhaustion and two-sprite entity reuse");
     return 0;
 }

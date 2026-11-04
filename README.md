@@ -68,6 +68,8 @@ port does not introduce one.
 From this clone:
 
 ```sh
+# Check debugger record offsets inside ZDE after building:
+# zde --no-tty exec python3 /src/tmp/zeal-enigma/tests/target_layout.py
 python3 tests/test_assets.py
 python3 tests/test_gameplay.py
 python3 tests/verify_world.py

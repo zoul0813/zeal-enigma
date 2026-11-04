@@ -1,5 +1,6 @@
 #include <zvb_gfx.h>
 #include <zgdk/types.h>
+#include <zgdk/entities.h>
 
 #include "game_world.h"
 #include "main.h"
@@ -14,8 +15,8 @@
 #define ENEMY_SPEED    3
 
 typedef struct {
-        Moveable(moveable);
-
+        /* Room/sprite coordinates; a horizontal pair shares one lifecycle. */
+        Point point;
         uint8_t type;
 
         gfx_sprite* sprite_l;
@@ -23,6 +24,7 @@ typedef struct {
 } enemy_t;
 
 extern enemy_t ENEMIES[MAX_ENEMIES];
+extern entity_pool_t enemy_pool;
 
 
 error enemies_init(void);

@@ -32,14 +32,18 @@ error player_init(void)
         .flags = SPRITE_NONE,
     };
     player.sprite_head = sprites_register(sprite);
+    if (player.sprite_head == NULL) return ERR_NO_MORE_MEMORY;
 
     sprite.tile        = BODY_TILE(); // body is always header + 9
     player.sprite_body = sprites_register(sprite);
+    if (player.sprite_body == NULL) return ERR_NO_MORE_MEMORY;
 
 #if DEBUG
     sprite.tile = 4;
     player.debug1 = sprites_register(sprite);
+    if (player.debug1 == NULL) return ERR_NO_MORE_MEMORY;
     player.debug2 = sprites_register(sprite);
+    if (player.debug2 == NULL) return ERR_NO_MORE_MEMORY;
 #endif
 
     player_reset();
