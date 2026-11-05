@@ -51,8 +51,9 @@ The port now uses the original per-room enemy population/speed tables and four
 difficulty levels. Player logic runs at nominally 50 Hz, scheduled as five ticks
 per six 60 Hz video frames. Input and rendering run every video frame, while
 all enemies and all bullets run on opposite logic ticks (about 25 Hz each), after a
-difficulty-dependent enemy entry pause. Eight enemy appearances award the
-original 10–800 points; keys award 5,000. Rooms repopulate after re-entry.
+difficulty-dependent enemy entry pause. Eight enemy types award the original
+10–800 points and share the five complete graphic variants supplied by the sprite
+sheet. Keys award 5,000. Rooms repopulate after re-entry.
 
 Arrows select difficulty on the title screen; Space starts. During play, arrows
 move in eight directions and Space fires repeatedly while moving. The laser has
@@ -79,6 +80,9 @@ python3 tests/test_assets.py
 python3 tests/test_gameplay.py
 python3 tests/verify_world.py
 python3 tests/verify_gameplay.py
+python3 tests/verify_keyboard.py
+# Sweep release timing every 50 CPU cycles across sprite uploads:
+python3 tests/verify_keyboard.py --sweep --report build/verify-keyboard.json
 ```
 
 Host tests use ASan/UBSan to check asset safety and gameplay rules. The target

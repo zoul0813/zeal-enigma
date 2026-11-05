@@ -5,7 +5,7 @@ safe disk-copy/debugger harness. No C64/C16 or old Zeal baseline is asserted.
 import struct
 from emulator import ENEMY_STRIDE, ENEMY_TAG, ENEMY_LEFT, ENEMY_RIGHT
 from emulator import BULLET_STRIDE, BULLET_TAG, BULLET_SPRITE
-from emulator import Emulator, symbol, position, player_position, set_player
+from emulator import Emulator, ROOT, symbol, position, player_position, set_player
 
 
 def byte(emulator, name, offset=0):
@@ -26,6 +26,33 @@ def hide_enemies(emulator):
 
 def active_enemies(emulator):
     return sum(emulator.read(enemy_sprite(emulator, i) + 4, 1)[0] != 0 for i in range(16))
+
+
+def verify_enemy_artwork(emulator):
+    tiles = (ROOT / 'build/assets/enemies.zts').read_bytes()
+    def visible(index):
+        tile = byte(emulator, 'ENEMIES', index * ENEMY_STRIDE + ENEMY_TAG)
+        if tile == 255:
+            return
+        for right in (False, True):
+            graphic = emulator.read(enemy_sprite(emulator, index, right) + 4, 1)[0] - 48
+            assert 0 <= graphic < len(tiles) // 128, ('enemy artwork out of range', tile, graphic)
+            assert any(tiles[graphic * 128:(graphic + 1) * 128]), ('invisible enemy', tile, graphic)
+    # Check actual room spawns before replacing them with controlled types.
+    for index in range(16):
+        visible(index)
+    hide_enemies(emulator)
+    emulator.write(symbol('ENEMIES'), struct.pack('<HH', 600, 100))
+    for kind in range(8):
+        emulator.write(symbol('ENEMIES') + ENEMY_TAG, bytes((kind,)))
+        graphics = set()
+        for frame in range(23):
+            emulator.frame()
+            if frame < 3:
+                continue  # Let the alternating enemy pass select this type.
+            visible(0)
+            graphics.add(emulator.read(enemy_sprite(emulator, 0) + 4, 1)[0])
+        assert len(graphics) == 2, ('enemy animation missing', kind, graphics)
 
 
 def advance(emulator, frames=1):
@@ -88,6 +115,7 @@ def run():
         assert byte(emulator, 'player', 14) == 3
         assert byte(emulator, 'player', 15) == 215
         assert active_enemies(emulator) == 2
+        verify_enemy_artwork(emulator)
         hide_enemies(emulator)
 
         # Fire repeats while held, and does not consume energy while stationary.

@@ -12,7 +12,7 @@ import re
 import shutil
 import statistics
 import struct
-from emulator import ENEMY_STRIDE, ENEMY_LEFT, ENEMY_RIGHT, BULLET_STRIDE, BULLET_SPRITE, BULLET_TAG
+from emulator import ENEMY_STRIDE, ENEMY_TAG, ENEMY_LEFT, ENEMY_RIGHT, BULLET_STRIDE, BULLET_SPRITE, BULLET_TAG
 from emulator import Emulator, ROOT, symbol, position, set_player
 
 CPU_HZ = 10_000_000
@@ -81,6 +81,11 @@ def release(emulator):
 def enter(emulator, x, y):
     # Controlled entry through a real rooms_move/load/on_enter, using the same
     # technique as the navigation regression checks. No loader is bypassed.
+    # Isolate the forced edge placement from enemies in the source room.
+    for base, left, right in actors(emulator):
+        emulator.write(base + ENEMY_TAG, b'\xff')
+        emulator.write(left + 4, b'\0')
+        emulator.write(right + 4, b'\0')
     release(emulator)
     if x:
         emulator.write(symbol('rooms_position'), bytes((x-1, y)))
@@ -148,8 +153,8 @@ def fixture(emulator, enemies, bullets=False):
             x, y = chosen[index]
             x, y = (x+1)*16, (y+5)*16
             emulator.write(base, struct.pack('<HH', x, y))
-            emulator.write(left, struct.pack('<HHB', y, x, 48+(index&7)*4))
-            emulator.write(right, struct.pack('<HHB', y, x+16, 49+(index&7)*4))
+            emulator.write(left, struct.pack('<HHB', y, x, 48+(index%5)*4))
+            emulator.write(right, struct.pack('<HHB', y, x+16, 49+(index%5)*4))
         if bullets:
             # Set a valid pool high-water mark and live tags for the synthetic
             # eight-projectile workload, retaining actual sprite reservations.

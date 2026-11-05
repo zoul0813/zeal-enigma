@@ -31,6 +31,10 @@ static const uint8_t room_speed[64] = {
     0x5a, 0x67, 0x5a, 0x5a, 0x7f, 0xaf, 0xff, 0xff,
 };
 
+/* The sheet supplies five complete four-tile variants. Keep all eight score
+ * types, but reuse valid artwork instead of selecting blank/missing tiles. */
+static const uint8_t enemy_graphics[8] = {0, 4, 8, 12, 16, 0, 4, 8};
+
 /* The logical map already classifies gameplay cells. Retain row pointers,
  * not copied cells: removing pickups/gates is immediately visible. */
 static const uint8_t *room_rows[ROOM_HEIGHT];
@@ -105,7 +109,7 @@ void enemies_spawn(uint8_t room_id) {
         enemy_t *enemy = entity_pool_alloc(&enemy_pool, (uint8_t)rand8() & 7);
         if (enemy == NULL) break;
         ++spawned;
-        enemy->sprite_l->tile = ENEMY_INDEX + enemy->type * 4;
+        enemy->sprite_l->tile = ENEMY_INDEX + enemy_graphics[enemy->type];
         enemy->sprite_r->tile = enemy->sprite_l->tile + 1;
         enemy_set_xy(enemy, (spawn.x + ROOM_OFFSET_X + 1) * SPRITE_WIDTH,
             (spawn.y + ROOM_OFFSET_Y + 1) * SPRITE_HEIGHT);
@@ -147,7 +151,7 @@ void enemies_move(Point *target) {
     int16_t dy = (target->y - SPRITE_HEIGHT) >> 3;
     enemy_t *enemy;
     ENTITY_POOL_FOR_EACH(&enemy_pool, enemy, type) {
-        enemy->sprite_l->tile = ENEMY_INDEX + enemy->type * 4 + ((enemy_tick >> 2) & 1) * 2;
+        enemy->sprite_l->tile = ENEMY_INDEX + enemy_graphics[enemy->type] + ((enemy_tick >> 2) & 1) * 2;
         enemy->sprite_r->tile = enemy->sprite_l->tile + 1;
         if (waiting) continue;
         int16_t x = enemy->point.x, y = enemy->point.y;

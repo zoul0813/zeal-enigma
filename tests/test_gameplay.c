@@ -224,6 +224,26 @@ static void test_weapons_and_scores(void) {
 
 }
 
+static void test_enemy_artwork(void) {
+    empty_room();
+    game_difficulty = 1;
+    enemies_spawn(7);
+    for (unsigned i = 0; i < MAX_ENEMIES; ++i) ENEMIES[i].type = i & 7;
+    Point target = {320, 240};
+    for (unsigned frame = 0; frame < 16; ++frame) {
+        enemies_move(&target);
+        for (unsigned i = 0; i < MAX_ENEMIES; ++i) {
+            const enemy_t *enemy = &ENEMIES[i];
+            /* The supplied sheet has twenty nonblank tiles: five complete
+             * two-sprite/two-frame variants, not eight. */
+            assert(enemy->sprite_l->tile >= ENEMY_INDEX);
+            assert(enemy->sprite_r->tile < ENEMY_INDEX + 20);
+            assert(enemy->sprite_r->tile == enemy->sprite_l->tile + 1);
+            assert(enemy->type == (i & 7));
+        }
+    }
+}
+
 static void test_player_reset_and_resources(void) {
     player.score = 12345; player.keys = 0x1ff; player.lives = 1; player.energy = 0;
     player.direction.x = -1;
@@ -344,6 +364,7 @@ int main(void) {
     test_delay_and_simultaneous_chase();
     test_walls_and_contact();
     test_weapons_and_scores();
+    test_enemy_artwork();
     test_player_reset_and_resources();
     test_cached_collision();
     test_entity_lifecycle();
