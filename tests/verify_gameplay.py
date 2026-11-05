@@ -4,6 +4,7 @@ safe disk-copy/debugger harness. No C64/C16 or old Zeal baseline is asserted.
 """
 import struct
 from emulator import ENEMY_STRIDE, ENEMY_TAG, ENEMY_LEFT, ENEMY_RIGHT
+from emulator import BULLET_STRIDE, BULLET_TAG, BULLET_SPRITE
 from emulator import Emulator, symbol, position, player_position, set_player
 
 
@@ -42,13 +43,20 @@ def until_state(emulator, state, maximum=90):
 
 def press(emulator, key):
     emulator.command('press ' + key)
-    advance(emulator, 2)
+    # Allow the emulated keyboard to deliver its scan code before release.
+    advance(emulator, 3)
     emulator.command('release ' + key)
     advance(emulator, 2)
 
 
 def force_contact(emulator):
     hide_enemies(emulator)
+    # Isolate contact from leftover shots, regardless of the actor phase.
+    for i in range(8):
+        bullet = symbol('BULLETS') + i * BULLET_STRIDE
+        emulator.write(bullet + BULLET_TAG, b'\xff')
+        sprite = int.from_bytes(emulator.read(bullet + BULLET_SPRITE, 2), 'little')
+        emulator.write(sprite + 4, b'\0')
     player = player_position(emulator)
     emulator.write(symbol('ENEMIES'), struct.pack('<HH', *player))
     emulator.write(symbol('ENEMIES') + ENEMY_TAG, b'\0')

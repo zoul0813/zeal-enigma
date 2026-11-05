@@ -25,6 +25,7 @@ uint32_t high_score;
 static uint16_t input1_prev;
 static uint8_t fire_held;
 static uint8_t shot_tick;
+static uint8_t logic_accumulator;
 static uint8_t death_ticks;
 static void show_title(uint8_t game_over);
 
@@ -36,8 +37,13 @@ int main(void)
         uint8_t action = input();
         if (action == ACTION_QUIT)
             goto quit_game;
-        // One player/logic update per Zeal display frame (nominally 60 Hz).
-        update();
+        // Five gameplay ticks per six video frames: nominally 50 Hz logic
+        // with 60 Hz input/presentation, without cumulative scheduling drift.
+        logic_accumulator += 50;
+        if (logic_accumulator >= 60) {
+            logic_accumulator -= 60;
+            update();
+        }
         draw();
         TSTATE_LOG(1);
     }
@@ -211,6 +217,7 @@ void reset(void) {
     bullets_clear();
     player_reset();
     shot_tick = 0;
+    logic_accumulator = 0;
     fire_held = 0;
     zos_err_t err = game_world_init();
     handle_error(err, "start game", 1);
@@ -261,8 +268,8 @@ void update(void) {
         }
         return;
     }
-    // Split actor work across frames: projectiles on one, all enemies on the
-    // next. Player movement, contact checks and presentation stay at 60 Hz.
+    // Split actor work across 50 Hz logic ticks: projectiles on one, all
+    // enemies on the next, giving each a nominal 25 Hz service rate.
     shot_tick ^= 1;
     if (shot_tick) bullet_move();
     else enemies_move(&player.point);
@@ -289,7 +296,7 @@ void update(void) {
         fire_held = 0;
         game_state = GAME_DYING;
         // Brief visible death pause; the original uses a palette/sound sequence.
-        death_ticks = 60;
+        death_ticks = 50;
     }
 }
 

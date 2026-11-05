@@ -79,8 +79,8 @@ void enemies_spawn(uint8_t room_id) {
     // Original multicolor X units are twice as wide as Y pixels; our art is 2x.
     speed_x = ((speed >> 2) & 3) * 4;
     speed_y = (speed & 3) * 2;
-    // enemies_move is called once per two display frames. These waiting
-    // passes preserve the entry pause in frame units (64/48/32/16 frames).
+    // enemies_move is called once per two 50 Hz logic ticks. These waiting
+    // passes preserve the entry pause in logic ticks (64/48/32/16 ticks).
     enemy_delay = (5 - game_difficulty) * 8;
     enemy_tick = 0;
 

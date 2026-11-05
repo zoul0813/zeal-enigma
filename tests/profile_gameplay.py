@@ -188,8 +188,9 @@ def profile(emulator, label, fixture_fn=None, limit=SAMPLES, stop_on_death=False
             if name == 'gfx_wait_end_vblank':
                 emulator.command(f'bc {symbol(name)}')
         if fixture_fn:
-            assert 'player_move' in phases, (label, 'Missing per-frame player update')
-            assert ('enemies_move' in phases) != ('bullet_move' in phases), (label, 'Actor phases must alternate')
+            logic_tick = 'update' in phases
+            assert ('player_move' in phases) == logic_tick, (label, 'Missing gameplay-tick player update')
+            assert int('enemies_move' in phases) + int('bullet_move' in phases) == int(logic_tick), (label, 'Expected one actor phase per gameplay tick')
         died = byte(emulator, 'game_state') == 2
         assert stop_on_death or not died, (label, 'Contact/death changed stress case')
         bullet_count = sum(emulator.read(sprite+4,1)[0] != 0 for sprite in getattr(fixture_fn, 'bullet_sprites', []))
@@ -218,7 +219,13 @@ def profile(emulator, label, fixture_fn=None, limit=SAMPLES, stop_on_death=False
         if values:
             result[field] = summarize(values)
     if fixture_fn:
-        enemy_frames = [f['enemies'] is not None for f in frames]
+        for offset in range(len(frames) - 5):
+            assert sum(f['update'] is not None for f in frames[offset:offset+6]) == 5, 'Expected five gameplay ticks per six video frames'
+        for offset in range(len(frames) - 11):
+            window = frames[offset:offset+12]
+            assert sum(f['enemies'] is not None for f in window) == 5, 'Expected five enemy passes per twelve video frames'
+            assert sum(f['bullets'] is not None for f in window) == 5, 'Expected five projectile passes per twelve video frames'
+        enemy_frames = [f['enemies'] is not None for f in frames if f['update'] is not None]
         assert all(a != b for a,b in zip(enemy_frames,enemy_frames[1:])), 'Actor phase did not alternate'
     active = [f for f in frames if not f['waiting_for_enemies']]
     if active:
