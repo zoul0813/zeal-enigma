@@ -4,6 +4,7 @@
 #include <zgdk/tilemap/scroll.h>
 #include <zgdk/rooms.h>
 #include <zgdk/rooms/transitions.h>
+#include <zgdk/sprites.h>
 
 #include "game_world.h"
 #include "assets.h"
@@ -13,6 +14,7 @@
 
 static uint8_t room_tiles[ROOM_WIDTH * ROOM_HEIGHT];
 static Point room_entry;
+static zos_err_t room_load(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t tile_x, uint8_t tile_y);
 static void room_entered(gfx_context* ctx, uint8_t x, uint8_t y, Edge edge);
 
 static const rooms_config_t rooms_config = {
@@ -22,10 +24,20 @@ static const rooms_config_t rooms_config = {
     .layer = LAYER0,
     .tiles = room_tiles,
     .tiles_size = sizeof(room_tiles),
-    .load_room = load_tilemap,
+    .load_room = room_load,
     .on_enter = room_entered,
     .transition = NULL,
 };
+
+static zos_err_t room_load(gfx_context* ctx, uint8_t x, uint8_t y, uint8_t tile_x, uint8_t tile_y) {
+    /* Hide hardware sprites before loading changes the visible room. Keep the
+     * arena intact: the next draw restores it after arrival and enemy spawning.
+     * Blocked world edges never load a room, so they keep their sprites. */
+    if (gfx_wait_vblank(ctx) != GFX_SUCCESS) return ERR_FAILURE;
+    if (sprites_clear(ctx) != GFX_SUCCESS) return ERR_FAILURE;
+    if (gfx_wait_end_vblank(ctx) != GFX_SUCCESS) return ERR_FAILURE;
+    return load_tilemap(ctx, x, y, tile_x, tile_y);
+}
 
 static void room_set_palette(void)
 {

@@ -3,8 +3,10 @@
 This game uses ZGDK room management in `zgdk.lib` for room navigation,
 world position, logical tilemap registration, and room loading coordination.
 `src/game_world.c` configures an 8x8 world with 40x21-tile rooms at tile offset
-(0,4), leaving space for the HUD. Transitions are immediate; the optional slide
-and minimap modules are not linked into this game.
+(0,4), leaving space for the HUD. Transitions replace the room directly, hiding
+hardware sprites during loading until the next draw presents the player at the
+entrance and the new enemies. The optional slide and minimap modules are not
+linked into this game.
 
 Enigma owns its archive/decompression, tileset and palette uploads, room object
 overlays, player movement and arrival positions, pickups, gates, and enemies.
